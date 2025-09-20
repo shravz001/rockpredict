@@ -47,8 +47,7 @@ class Visualizer:
             cmin=0,
             cmax=100,
             colorbar=dict(
-                title="Risk Level (%)",
-                titleside="right",
+                title=dict(text="Risk Level (%)"),
                 tickmode="array",
                 tickvals=[0, 25, 50, 75, 100],
                 ticktext=["0%", "25%", "50%", "75%", "100%"],

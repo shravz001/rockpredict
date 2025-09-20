@@ -165,7 +165,7 @@ def render_dashboard():
         )
         fig_risk.add_hline(y=75, line_dash="dash", line_color="red", annotation_text="High Risk Threshold")
         fig_risk.add_hline(y=50, line_dash="dash", line_color="orange", annotation_text="Medium Risk Threshold")
-        st.plotly_chart(fig_risk, use_container_width=True)
+        st.plotly_chart(fig_risk, width="stretch")
     
     with col2:
         st.subheader("🌡️ Environmental Conditions")
@@ -188,7 +188,7 @@ def render_dashboard():
             yaxis=dict(title='Temperature (°C)', side='left'),
             yaxis2=dict(title='Humidity (%)', side='right', overlaying='y')
         )
-        st.plotly_chart(fig_env, use_container_width=True)
+        st.plotly_chart(fig_env, width="stretch")
     
     # Sensor status table
     st.subheader("📊 Sensor Status Overview")
@@ -205,7 +205,7 @@ def render_dashboard():
             return 'background-color: #FFB6C1'
     
     styled_df = df_sensors.style.applymap(color_status, subset=['Status'])
-    st.dataframe(styled_df, use_container_width=True)
+    st.dataframe(styled_df, width="stretch")
 
 def render_3d_visualization():
     st.header("🗺️ 3D Mine Visualization")
@@ -215,7 +215,7 @@ def render_3d_visualization():
     
     # 3D visualization with risk overlay
     fig_3d = st.session_state.visualizer.create_3d_mine_plot(mine_data)
-    st.plotly_chart(fig_3d, use_container_width=True)
+    st.plotly_chart(fig_3d, width="stretch")
     
     # Legend and controls
     col1, col2 = st.columns([1, 2])
@@ -265,7 +265,7 @@ def render_3d_visualization():
                 show_risk_zones=show_risk_zones
             )
             fig_updated = st.session_state.visualizer.create_3d_mine_plot(updated_data)
-            st.plotly_chart(fig_updated, use_container_width=True)
+            st.plotly_chart(fig_updated, width="stretch")
 
 def render_analytics():
     st.header("📈 Risk Analytics & Forecasting")
@@ -283,7 +283,7 @@ def render_analytics():
             {"Metric": "Recall", "Random Forest": f"{model_metrics['rf_recall']:.3f}", "XGBoost": f"{model_metrics['xgb_recall']:.3f}"},
             {"Metric": "F1-Score", "Random Forest": f"{model_metrics['rf_f1']:.3f}", "XGBoost": f"{model_metrics['xgb_f1']:.3f}"}
         ])
-        st.dataframe(metrics_df, use_container_width=True)
+        st.dataframe(metrics_df, width="stretch")
     
     with col2:
         st.subheader("🔮 Risk Forecast (Next 48 Hours)")
@@ -315,7 +315,7 @@ def render_analytics():
             fillcolor='rgba(0,100,80,0.2)'
         ))
         
-        st.plotly_chart(fig_forecast, use_container_width=True)
+        st.plotly_chart(fig_forecast, width="stretch")
     
     # Feature importance analysis
     st.subheader("🔍 Feature Importance Analysis")
@@ -328,7 +328,7 @@ def render_analytics():
         title="Feature Importance in Risk Prediction",
         labels={'x': 'Importance Score', 'y': 'Features'}
     )
-    st.plotly_chart(fig_importance, use_container_width=True)
+    st.plotly_chart(fig_importance, width="stretch")
     
     # Historical analysis
     st.subheader("📊 Historical Risk Analysis")
@@ -350,7 +350,7 @@ def render_analytics():
             title="Risk Level Distribution",
             labels={'x': 'Risk Level (%)', 'y': 'Frequency'}
         )
-        st.plotly_chart(fig_dist, use_container_width=True)
+        st.plotly_chart(fig_dist, width="stretch")
     
     with col2:
         # Alert frequency
@@ -360,7 +360,7 @@ def render_analytics():
             title="Daily Alert Frequency",
             labels={'x': 'Date', 'y': 'Number of Alerts'}
         )
-        st.plotly_chart(fig_alerts, use_container_width=True)
+        st.plotly_chart(fig_alerts, width="stretch")
     
     with col3:
         # Correlation matrix
@@ -372,7 +372,7 @@ def render_analytics():
             title="Feature Correlation Matrix",
             aspect="auto"
         )
-        st.plotly_chart(fig_corr, use_container_width=True)
+        st.plotly_chart(fig_corr, width="stretch")
 
 def render_alert_management():
     st.header("🚨 Alert Management System")
@@ -452,7 +452,7 @@ def render_alert_management():
     
     if alert_history:
         df_alerts = pd.DataFrame(alert_history)
-        st.dataframe(df_alerts, use_container_width=True)
+        st.dataframe(df_alerts, width="stretch")
         
         # Alert statistics
         col1, col2 = st.columns(2)
@@ -466,7 +466,7 @@ def render_alert_management():
                 title="Daily Alert Trends",
                 labels={'x': 'Date', 'y': 'Number of Alerts'}
             )
-            st.plotly_chart(fig_trends, use_container_width=True)
+            st.plotly_chart(fig_trends, width="stretch")
         
         with col2:
             # Severity distribution
@@ -476,7 +476,7 @@ def render_alert_management():
                 names=severity_counts.index,
                 title="Alert Severity Distribution"
             )
-            st.plotly_chart(fig_severity, use_container_width=True)
+            st.plotly_chart(fig_severity, width="stretch")
     
     # Manual alert creation
     st.subheader("➕ Create Manual Alert")
@@ -605,7 +605,7 @@ def render_communication_status(comm_mode):
     
     if comm_log:
         df_comm = pd.DataFrame(comm_log)
-        st.dataframe(df_comm, use_container_width=True)
+        st.dataframe(df_comm, width="stretch")
     
     # Test communication
     st.subheader("🧪 Test Communication")
@@ -779,46 +779,7 @@ def render_system_config():
             status_icon = "✅" if is_set else "❌"
             st.markdown(f"{status_icon} {var}: {'Set' if is_set else 'Not Set'}")
 
-# Background monitoring function
-def background_monitoring():
-    """Background thread for continuous monitoring"""
-    while st.session_state.monitoring_active:
-        try:
-            # Generate new sensor data
-            current_data = st.session_state.data_generator.generate_realtime_data()
-            
-            # Predict risk
-            risk_level = st.session_state.predictor.predict_risk(current_data)
-            
-            # Check for alerts
-            if risk_level > 75:  # High risk threshold
-                alert = {
-                    'title': f'High Risk Alert - {risk_level:.1f}%',
-                    'severity': 'Critical' if risk_level > 90 else 'High',
-                    'location': current_data.get('location', 'Unknown'),
-                    'description': f'Risk level has exceeded threshold: {risk_level:.1f}%',
-                    'action': 'Evacuate personnel from high-risk areas immediately',
-                    'timestamp': datetime.now(),
-                    'status': 'Active',
-                    'source': 'AI Prediction'
-                }
-                st.session_state.alert_system.create_alert(alert)
-            
-            # Store data in database
-            st.session_state.db_manager.store_sensor_data(current_data)
-            
-            # Wait before next iteration
-            time.sleep(60)  # Check every minute
-            
-        except Exception as e:
-            print(f"Error in background monitoring: {e}")
-            time.sleep(30)  # Wait 30 seconds before retrying
-
-# Start background monitoring if active
-if st.session_state.monitoring_active:
-    if 'monitoring_thread' not in st.session_state or not st.session_state.monitoring_thread.is_alive():
-        st.session_state.monitoring_thread = threading.Thread(target=background_monitoring, daemon=True)
-        st.session_state.monitoring_thread.start()
+# Background monitoring will be handled differently to avoid session state issues
 
 if __name__ == "__main__":
     main()
