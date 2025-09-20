@@ -56,6 +56,9 @@ def main():
     
     # Real-time status indicators from database
     try:
+        # Ensure database is initialized
+        st.session_state.db_manager._initialize_default_data()
+        
         # Get real-time statistics from database
         stats = st.session_state.db_manager.get_system_statistics(1)  # Default mine site
         active_alerts = st.session_state.db_manager.get_active_alerts(1)
@@ -72,6 +75,8 @@ def main():
         with col4:
             st.metric("Active Alerts", len(active_alerts), f"Total: {stats['active_alerts']}")
     except Exception as e:
+        # Show specific error for debugging
+        st.error(f"Database error: {str(e)}")
         # Fallback to original metrics if database is unavailable
         col1, col2, col3, col4 = st.columns(4)
         with col1:

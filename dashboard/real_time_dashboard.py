@@ -221,7 +221,7 @@ class RealTimeDashboard:
         
         with col2:
             if st.button("Refresh Now"):
-                st.experimental_rerun()
+                st.rerun()
         
         if auto_refresh:
             # Auto-refresh every 30 seconds

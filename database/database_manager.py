@@ -372,13 +372,17 @@ class RockfallDatabaseManager:
                 mine_site_id=mine_site_id
             ).order_by(desc(RiskAssessment.timestamp)).first()
             
-            # Communication statistics
-            comm_success_rate = session.query(
-                func.avg(func.cast(CommunicationLog.success, func.INTEGER))
-            ).filter(
+            # Communication statistics - simplified to avoid SQLAlchemy function issues
+            comm_logs = session.query(CommunicationLog).filter(
                 CommunicationLog.mine_site_id == mine_site_id,
                 CommunicationLog.timestamp >= cutoff_time
-            ).scalar() or 0
+            ).all()
+            
+            if comm_logs:
+                successful_comms = sum(1 for log in comm_logs if log.success)
+                comm_success_rate = successful_comms / len(comm_logs)
+            else:
+                comm_success_rate = 0
             
             return {
                 "total_sensors": total_sensors,

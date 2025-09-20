@@ -177,15 +177,34 @@ class DatabaseManager:
     
     def __init__(self, database_url=None):
         if database_url is None:
-            database_url = os.getenv('DATABASE_URL', 'sqlite:///rockfall_prediction.db')
+            # Default to local SQLite for VS Code development
+            # Set DB_TYPE=postgresql in environment for PostgreSQL
+            db_type = os.getenv('DB_TYPE', 'sqlite').lower()
+            
+            if db_type == 'postgresql':
+                # Local PostgreSQL setup for VS Code
+                db_host = os.getenv('DB_HOST', 'localhost')
+                db_port = os.getenv('DB_PORT', '5432')
+                db_name = os.getenv('DB_NAME', 'rockfall_db')
+                db_user = os.getenv('DB_USER', 'postgres')
+                db_password = os.getenv('DB_PASSWORD', '')
+                database_url = f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
+            else:
+                # SQLite for local VS Code development
+                db_path = os.getenv('DB_PATH', './data/rockfall_prediction.db')
+                # Ensure directory exists
+                os.makedirs(os.path.dirname(db_path) if os.path.dirname(db_path) else '.', exist_ok=True)
+                database_url = f'sqlite:///{db_path}'
         
         try:
             self.engine = create_engine(database_url, echo=False)
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
+            print(f"Database connected: {database_url.split('://')[0].upper()}")
         except Exception as e:
-            # Fallback to SQLite if PostgreSQL fails
-            print(f"Database connection failed, falling back to SQLite: {e}")
-            self.engine = create_engine('sqlite:///rockfall_prediction.db', echo=False)
+            # Final fallback to simple SQLite
+            print(f"Database connection failed, using fallback SQLite: {e}")
+            fallback_path = './rockfall_prediction.db'
+            self.engine = create_engine(f'sqlite:///{fallback_path}', echo=False)
             self.SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=self.engine)
     
     def create_tables(self):

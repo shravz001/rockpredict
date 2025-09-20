@@ -25,9 +25,11 @@ Preferred communication style: Simple, everyday language.
 
 **Data Storage:**
 - SQLAlchemy ORM with support for multiple database backends
+- VS Code-friendly database configuration with local SQLite default and PostgreSQL support
 - Comprehensive database schema including mine sites, sensors, readings, alerts, and environmental data
 - Data ingestion system supporting multiple IoT protocols
 - Automatic data retention and cleanup policies
+- Local database files stored in ./data/ directory for VS Code development
 
 **Communication Systems:**
 - LoRaWAN simulation and management for low-power, long-range sensor communication
@@ -74,8 +76,11 @@ Preferred communication style: Simple, everyday language.
 
 **Database:**
 - SQLAlchemy ORM for database abstraction
-- Support for PostgreSQL, SQLite, and other SQL databases
+- Default SQLite configuration for VS Code development (./data/rockfall_prediction.db)
+- Optional PostgreSQL support via environment variables
+- Support for local and remote database configurations
 - Automatic schema migration and table creation
+- Environment-based configuration with .env.example provided
 
 **IoT and Hardware:**
 - LoRaWAN protocol simulation and management
