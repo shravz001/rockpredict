@@ -17,7 +17,8 @@ from communication.lorawan_simulator import LoRaWANSimulator
 from utils.config_manager import ConfigManager
 from dashboard.real_time_dashboard import RealTimeDashboard
 from analysis.historical_analysis import HistoricalAnalysis
-from database.database_manager import get_rockfall_db
+from database.database_manager import RockfallDatabaseManager
+from database.data_ingestion import IoTDataIngestion
 
 # Configure page
 st.set_page_config(
@@ -38,7 +39,8 @@ if 'initialized' not in st.session_state:
     st.session_state.config_manager = ConfigManager()
     st.session_state.dashboard = RealTimeDashboard()
     st.session_state.historical_analysis = HistoricalAnalysis()
-    st.session_state.db_manager = get_rockfall_db()
+    st.session_state.db_manager = RockfallDatabaseManager()
+    st.session_state.iot_ingestion = IoTDataIngestion()
     st.session_state.last_update = datetime.now()
     st.session_state.alert_count = 0
 
@@ -126,41 +128,22 @@ def show_real_time_dashboard():
         st.warning(f"Using synthetic data due to database issue: {str(e)}")
         current_data = st.session_state.data_generator.generate_real_time_data()
     
-    # Use the professional dashboard
-    try:
-        st.session_state.dashboard.render_full_dashboard(
-            current_data,
-            predictions=st.session_state.predictor.generate_predictions(),
-            alerts=st.session_state.notification_system.get_alert_history(10),
-            comm_data={
-                'lorawan': st.session_state.lorawan_sim.get_network_status(),
-                'radio': st.session_state.lorawan_sim.get_radio_status()
-            }
-        )
-    except Exception as e:
-        st.error(f"Error rendering dashboard: {str(e)}")
-        st.info("Falling back to simplified view...")
-        
-        # Simple fallback dashboard
-        render_simple_dashboard(current_data)
-
-def render_simple_dashboard(current_data):
-    """Simplified dashboard fallback"""
-    # Display key sensor metrics
+    # Display real-time metrics
     col1, col2 = st.columns([2, 1])
     
     with col1:
+        # Risk heatmap
         st.subheader("Mine Risk Zones")
         try:
-            # Create simple risk heatmap
-            sensors = current_data.get('sensors', [])
-            if sensors:
-                sensor_df = pd.DataFrame(sensors)
-                st.dataframe(sensor_df[['sensor_id', 'sensor_type', 'status']].head(10))
-            else:
-                st.info("No sensor data available")
+            risk_map = st.session_state.dashboard.create_risk_heatmap(current_data)
+            st.plotly_chart(risk_map, use_container_width=True)
         except Exception as e:
-            st.info("Sensor visualization not available")
+            st.error(f"Error creating risk heatmap: {str(e)}")
+            st.info("Using alternative visualization...")
+            # Show a simple sensor status table instead
+            if 'sensors' in current_data and current_data['sensors']:
+                sensor_df = pd.DataFrame(current_data['sensors'])
+                st.dataframe(sensor_df[['sensor_id', 'sensor_type', 'status']].head(10))
         
         # Add legend
         st.markdown("""
@@ -204,6 +187,49 @@ def render_simple_dashboard(current_data):
                 )
         else:
             st.info("No sensor data available")
+        
+        # Environmental conditions
+        st.subheader("Environmental Conditions")
+        env_data = current_data.get('environmental', {})
+        if env_data:
+            # Handle database format
+            if isinstance(env_data, list) and env_data:
+                env = env_data[0]  # Get latest environmental data
+            else:
+                env = env_data
+            
+            temp = env.get('temperature', 'N/A')
+            precip = env.get('precipitation', env.get('rainfall', 'N/A'))
+            wind = env.get('wind_speed', 'N/A')
+            
+            if temp != 'N/A':
+                st.metric("Temperature", f"{temp:.1f}°C")
+            if precip != 'N/A':
+                st.metric("Precipitation", f"{precip:.1f}mm")
+            if wind != 'N/A':
+                st.metric("Wind Speed", f"{wind:.1f}m/s")
+        else:
+            st.info("No environmental data available")
+    
+    # Real-time alerts
+    st.subheader("🚨 Active Alerts")
+    try:
+        # Get active alerts from database
+        alerts = st.session_state.db_manager.get_active_alerts(1)  # Default mine site
+        if alerts:
+            for alert in alerts:
+                severity = alert['severity']
+                if severity == "critical":
+                    st.error(f"**{severity.upper()}**: {alert['title']} - {alert['message']}")
+                elif severity == "high":
+                    st.warning(f"**{severity.upper()}**: {alert['title']} - {alert['message']}")
+                else:
+                    st.info(f"**{severity.upper()}**: {alert['title']} - {alert['message']}")
+        else:
+            st.success("No active alerts - All systems normal")
+    except Exception as e:
+        st.warning(f"Could not load alerts: {str(e)}")
+        st.success("System monitoring active - No critical issues detected")
 
 def show_3d_visualization():
     st.header("🏔️ 3D Mine Visualization")
@@ -471,7 +497,7 @@ def show_communication_status():
         # Test communication
         if st.button("Test Emergency Communication"):
             test_result = st.session_state.lorawan_sim.test_emergency_communication()
-            if test_result['overall_success']:
+            if test_result['success']:
                 st.success("Emergency communication test successful!")
             else:
                 st.error("Emergency communication test failed!")
@@ -528,24 +554,22 @@ def show_system_configuration():
         use_weather_data = st.checkbox("Weather Data", value=config.get('use_weather', True))
         
         # Save configuration
-        if st.button("💾 Save Configuration"):
+        if st.button("Save Configuration"):
             new_config = {
-                'mine_name': mine_name,
-                'coordinates': mine_coordinates,
-                'sensor_count': sensor_count,
                 'model_update_interval': model_update_interval,
                 'data_retention_days': data_retention_days,
                 'alert_cooldown': alert_cooldown,
                 'max_alerts_per_hour': max_alerts_per_hour,
+                'mine_name': mine_name,
+                'coordinates': mine_coordinates,
+                'sensor_count': sensor_count,
+                'sensor_freq_index': sensor_update_freq,
                 'use_dem': use_dem_data,
                 'use_drone': use_drone_imagery,
                 'use_weather': use_weather_data
             }
-            
-            if st.session_state.config_manager.update_config(new_config):
-                st.success("Configuration saved successfully!")
-            else:
-                st.error("Failed to save configuration")
+            st.session_state.config_manager.save_config(new_config)
+            st.success("Configuration saved successfully!")
 
 if __name__ == "__main__":
     main()

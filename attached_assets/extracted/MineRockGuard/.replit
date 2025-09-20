@@ -1,10 +1,10 @@
 modules = ["python-3.11"]
 [agent]
-integrations = ["twilio_send_message:1.0.0", "python_openai:1.0.0"]
+integrations = ["python_sendgrid:1.0.0", "twilio_send_message:1.0.0", "python_openai:1.0.0"]
 
 [nix]
 channel = "stable-25_05"
-packages = ["glibcLocales", "libGL", "libGLU"]
+packages = ["glibcLocales", "libGL", "libGLU", "openssl", "postgresql"]
 
 [deployment]
 deploymentTarget = "autoscale"
