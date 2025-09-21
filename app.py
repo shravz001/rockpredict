@@ -162,15 +162,6 @@ def render_page_content(page):
         show_landing_page()
         return
     
-    # Professional page container for other pages
-    st.markdown("""
-    <div style="padding: 2rem; background: white; margin: 0;">
-    """, unsafe_allow_html=True)
-    
-    # Main content area
-    st.markdown("""
-    <div style="padding: 2rem; background: #f4f6f9; min-height: 80vh;">
-    """, unsafe_allow_html=True)
     
     # Route to page content  
     if page == "Dashboard":
