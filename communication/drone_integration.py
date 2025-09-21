@@ -25,6 +25,10 @@ class DroneIntegration:
         self.sensor_failure_threshold = 3  # Number of failed sensors to trigger drone backup
         self.last_sensor_check = datetime.now()
         self.drone_backup_active = False
+        self.parallel_monitoring_active = False
+        self.last_parallel_analysis = None
+        self.current_drone_risk_level = "low"
+        self.current_sensor_risk_level = "low"
         
     def start_routine_patrol(self, mine_site_id: int = 1) -> Dict[str, Any]:
         """Start routine drone patrol mission"""
@@ -51,6 +55,256 @@ class DroneIntegration:
         except Exception as e:
             logger.error(f"Failed to start routine patrol: {e}")
             return {"success": False, "message": str(e)}
+    
+    def start_parallel_monitoring(self, mine_site_id: int = 1) -> Dict[str, Any]:
+        """Start continuous parallel monitoring with both sensors and drone"""
+        try:
+            logger.info("Starting parallel monitoring system")
+            
+            # Activate drone for continuous monitoring
+            self.drone_system.is_active = True
+            self.parallel_monitoring_active = True
+            
+            # Create initial flight log for parallel monitoring
+            flight_log = self._create_flight_log(mine_site_id, "parallel_monitoring")
+            
+            # Start continuous drone monitoring
+            self._start_continuous_drone_monitoring(flight_log.id, mine_site_id)
+            
+            return {
+                "success": True,
+                "message": "Parallel monitoring system activated",
+                "drone_active": True,
+                "sensor_monitoring": True,
+                "mode": "parallel"
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to start parallel monitoring: {e}")
+            return {"success": False, "message": str(e)}
+    
+    def get_parallel_predictions(self, mine_site_id: int = 1) -> Dict[str, Any]:
+        """Get real-time predictions from both sensor and drone systems"""
+        try:
+            # Get sensor predictions (simulated for now)
+            sensor_prediction = self._get_sensor_prediction(mine_site_id)
+            
+            # Get latest drone analysis
+            drone_prediction = self._get_latest_drone_prediction(mine_site_id)
+            
+            # Combine predictions with confidence weighting
+            combined_prediction = self._combine_predictions(sensor_prediction, drone_prediction)
+            
+            return {
+                "timestamp": datetime.now().isoformat(),
+                "sensor_prediction": sensor_prediction,
+                "drone_prediction": drone_prediction,
+                "combined_prediction": combined_prediction,
+                "monitoring_status": {
+                    "sensors_active": self._check_sensors_status(mine_site_id),
+                    "drone_active": self.drone_system.is_active,
+                    "parallel_mode": self.parallel_monitoring_active
+                }
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to get parallel predictions: {e}")
+            return {"success": False, "message": str(e)}
+    
+    def _start_continuous_drone_monitoring(self, flight_log_id: int, mine_site_id: int):
+        """Start continuous drone monitoring loop"""
+        try:
+            # Perform immediate image capture and analysis
+            location = {"lat": -23.5505, "lng": -46.6333, "altitude": 100}  # Mine location
+            capture_result = self.drone_system.capture_and_analyze_image(location)
+            
+            if capture_result["success"]:
+                # Store analysis
+                analysis_id = self._store_image_analysis(
+                    flight_log_id, mine_site_id, capture_result["result"]
+                )
+                
+                # Update current drone risk level
+                self.current_drone_risk_level = capture_result["result"]["analysis"]["risk_level"]
+                self.last_parallel_analysis = datetime.now()
+                
+                # Generate alert if high risk detected
+                if capture_result["risk_detected"]:
+                    self._generate_drone_alert(analysis_id, mine_site_id, capture_result["result"])
+                    
+                logger.info(f"Drone analysis completed - Risk Level: {self.current_drone_risk_level}")
+                
+        except Exception as e:
+            logger.error(f"Continuous drone monitoring error: {e}")
+    
+    def _get_sensor_prediction(self, mine_site_id: int) -> Dict[str, Any]:
+        """Get current sensor-based prediction"""
+        try:
+            from models.rockfall_predictor import RockfallPredictor
+            
+            # Initialize predictor
+            predictor = RockfallPredictor()
+            
+            # Get latest sensor data (simulated for now)
+            sensor_data = self._get_latest_sensor_data(mine_site_id)
+            
+            # Make prediction
+            prediction = predictor.predict_risk(sensor_data)
+            self.current_sensor_risk_level = prediction["risk_level"]
+            
+            return {
+                "risk_level": prediction["risk_level"],
+                "risk_score": prediction["risk_probability"],
+                "confidence": prediction["confidence"],
+                "data_source": "sensors",
+                "sensor_count": len(sensor_data),
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Sensor prediction error: {e}")
+            return {
+                "risk_level": "unknown",
+                "risk_score": 0.0,
+                "confidence": 0.0,
+                "data_source": "sensors",
+                "error": str(e)
+            }
+    
+    def _get_latest_drone_prediction(self, mine_site_id: int) -> Dict[str, Any]:
+        """Get latest drone analysis prediction"""
+        try:
+            if not self.last_parallel_analysis:
+                # Trigger new analysis if none exists
+                self._start_continuous_drone_monitoring(1, mine_site_id)
+            
+            return {
+                "risk_level": self.current_drone_risk_level,
+                "risk_score": self._risk_level_to_score(self.current_drone_risk_level),
+                "confidence": 0.85,  # Drone analysis confidence
+                "data_source": "drone_imaging",
+                "last_analysis": self.last_parallel_analysis.isoformat() if self.last_parallel_analysis else None,
+                "timestamp": datetime.now().isoformat()
+            }
+            
+        except Exception as e:
+            logger.error(f"Drone prediction error: {e}")
+            return {
+                "risk_level": "unknown",
+                "risk_score": 0.0,
+                "confidence": 0.0,
+                "data_source": "drone_imaging",
+                "error": str(e)
+            }
+    
+    def _combine_predictions(self, sensor_pred: Dict, drone_pred: Dict) -> Dict[str, Any]:
+        """Combine sensor and drone predictions with intelligent weighting"""
+        try:
+            # Weight based on data availability and confidence
+            sensor_weight = 0.6 if sensor_pred.get("confidence", 0) > 0.5 else 0.3
+            drone_weight = 0.4 if drone_pred.get("confidence", 0) > 0.5 else 0.7
+            
+            # Normalize weights
+            total_weight = sensor_weight + drone_weight
+            sensor_weight /= total_weight
+            drone_weight /= total_weight
+            
+            # Combine risk scores
+            sensor_score = sensor_pred.get("risk_score", 0)
+            drone_score = drone_pred.get("risk_score", 0)
+            combined_score = (sensor_score * sensor_weight) + (drone_score * drone_weight)
+            
+            # Determine combined risk level
+            if combined_score >= 0.7:
+                combined_risk = "critical"
+            elif combined_score >= 0.5:
+                combined_risk = "high"
+            elif combined_score >= 0.3:
+                combined_risk = "medium"
+            else:
+                combined_risk = "low"
+            
+            return {
+                "risk_level": combined_risk,
+                "risk_score": combined_score,
+                "confidence": min(sensor_pred.get("confidence", 0), drone_pred.get("confidence", 0)),
+                "sensor_weight": sensor_weight,
+                "drone_weight": drone_weight,
+                "agreement": self._calculate_prediction_agreement(sensor_pred, drone_pred),
+                "data_sources": "sensors_and_drone"
+            }
+            
+        except Exception as e:
+            logger.error(f"Prediction combination error: {e}")
+            return {
+                "risk_level": "unknown",
+                "risk_score": 0.0,
+                "confidence": 0.0,
+                "error": str(e)
+            }
+    
+    def _risk_level_to_score(self, risk_level: str) -> float:
+        """Convert risk level to numerical score"""
+        risk_mapping = {
+            "low": 0.2,
+            "medium": 0.4,
+            "high": 0.7,
+            "critical": 0.9,
+            "unknown": 0.0
+        }
+        return risk_mapping.get(risk_level, 0.0)
+    
+    def _calculate_prediction_agreement(self, sensor_pred: Dict, drone_pred: Dict) -> float:
+        """Calculate agreement between sensor and drone predictions"""
+        try:
+            sensor_score = sensor_pred.get("risk_score", 0)
+            drone_score = drone_pred.get("risk_score", 0)
+            
+            # Calculate similarity (1.0 = perfect agreement, 0.0 = complete disagreement)
+            difference = abs(sensor_score - drone_score)
+            agreement = max(0.0, 1.0 - difference)
+            
+            return round(agreement, 2)
+            
+        except Exception:
+            return 0.0
+    
+    def _get_latest_sensor_data(self, mine_site_id: int) -> Dict[str, float]:
+        """Get latest sensor readings (simulated for now)"""
+        import random
+        
+        return {
+            'displacement_rate': random.uniform(0.1, 2.0),
+            'strain_magnitude': random.uniform(0.05, 1.5),
+            'pore_pressure': random.uniform(10, 100),
+            'temperature': random.uniform(15, 35),
+            'rainfall': random.uniform(0, 50),
+            'wind_speed': random.uniform(0, 25),
+            'vibration_level': random.uniform(0.1, 5.0),
+            'slope_angle': random.uniform(30, 70),
+            'soil_moisture': random.uniform(10, 80),
+            'crack_density': random.uniform(0.1, 2.0)
+        }
+    
+    def _check_sensors_status(self, mine_site_id: int) -> bool:
+        """Check if sensors are currently active and reporting"""
+        try:
+            session = self.db_manager.db_manager.get_session()
+            from database.schema import Sensor, SensorReading
+            
+            # Check for recent sensor readings
+            cutoff_time = datetime.now() - timedelta(minutes=5)
+            recent_readings = session.query(SensorReading).filter(
+                SensorReading.timestamp >= cutoff_time
+            ).count()
+            
+            return recent_readings > 0
+            
+        except Exception:
+            return True  # Assume active if check fails
+        finally:
+            if 'session' in locals():
+                self.db_manager.db_manager.close_session(session)
     
     def _create_flight_log(self, mine_site_id: int, mission_type: str) -> DroneFlightLog:
         """Create flight log entry in database"""

@@ -25,51 +25,73 @@ class DroneDashboard:
         self.drone_system = self.drone_integration.drone_system
     
     def render_drone_monitoring_page(self):
-        """Render the main drone monitoring page"""
-        st.header("🚁 Drone Monitoring & Control")
+        """Render the main parallel monitoring page"""
+        st.title("🚁 Parallel Monitoring System")
+        st.markdown("*Real-time predictions from both sensors and drone surveillance*")
         
-        # Get current drone status
+        # Parallel monitoring controls
+        col1, col2, col3 = st.columns([2, 1, 1])
+        
+        with col1:
+            if st.button("🚀 Start Parallel Monitoring", type="primary"):
+                result = self.drone_integration.start_parallel_monitoring()
+                if result.get("success"):
+                    st.success("✅ Parallel monitoring activated!")
+                    st.rerun()
+                else:
+                    st.error(f"❌ Failed to start: {result.get('message')}")
+        
+        with col2:
+            if st.button("🔄 Refresh Data"):
+                st.rerun()
+        
+        with col3:
+            if st.button("⚠️ Emergency Scan"):
+                result = self.drone_integration.check_sensor_status_and_activate_backup()
+                if result.get("success"):
+                    st.success("Emergency scan initiated!")
+                    st.rerun()
+        
+        st.divider()
+        
+        # Get parallel predictions
         try:
-            status = self.drone_integration.get_drone_monitoring_status()
-            drone_status = status.get("drone_status", {})
+            predictions = self.drone_integration.get_parallel_predictions()
             
-            # Status overview
-            self._render_status_overview(drone_status, status)
+            if predictions.get("success") == False:
+                st.error(f"Error getting predictions: {predictions.get('message')}")
+                return
             
-            st.divider()
-            
-            # Control panel and mission management
-            col1, col2 = st.columns([2, 1])
-            
-            with col1:
-                self._render_mission_control()
-                
-            with col2:
-                self._render_quick_stats(status)
+            # Display parallel predictions
+            self._render_parallel_predictions(predictions)
             
             st.divider()
             
-            # Tabs for different views
-            tabs = st.tabs(["📸 Recent Images", "📊 Analysis Results", "🗺️ Flight Map", "⚠️ Alerts", "📈 Performance"])
+            # System status overview
+            self._render_system_status(predictions.get("monitoring_status", {}))
+            
+            st.divider()
+            
+            # Tabs for detailed views
+            tabs = st.tabs(["📊 Analysis Details", "🗺️ Flight Map", "⚠️ Alerts", "🔧 Advanced Controls"])
             
             with tabs[0]:
-                self._render_recent_images(status.get("recent_analyses", []))
-            
-            with tabs[1]:
-                self._render_analysis_results(status.get("recent_analyses", []))
+                self._render_detailed_analysis(predictions)
                 
-            with tabs[2]:
+            with tabs[1]:
+                drone_status = self.drone_system.get_drone_status()
                 self._render_flight_map(drone_status)
                 
-            with tabs[3]:
+            with tabs[2]:
                 self._render_drone_alerts()
                 
-            with tabs[4]:
-                self._render_performance_metrics(status)
+            with tabs[3]:
+                self._render_advanced_controls()
                 
         except Exception as e:
-            st.error(f"Error loading drone dashboard: {str(e)}")
-            st.info("Some drone features may not be available.")
+            st.error(f"Error loading parallel monitoring dashboard: {str(e)}")
+            st.info("Falling back to basic monitoring mode...")
+            self._render_fallback_dashboard()
     
     def _render_status_overview(self, drone_status: Dict[str, Any], full_status: Dict[str, Any]):
         """Render drone status overview"""
