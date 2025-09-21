@@ -167,17 +167,8 @@ def render_page_content(page):
     <div style="padding: 2rem; background: white; margin: 0;">
     """, unsafe_allow_html=True)
     
-    # Professional page header
-    st.markdown(f"""
-    <div class="professional-header">
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div>
-                <h1 style="margin: 0; font-size: 1.8rem; font-weight: 600;">{get_page_title(page)}</h1>
-            </div>
-            <div style="text-align: right;">
-            </div>
-        </div>
-    </div>
+    # Main content area
+    st.markdown("""
     <div style="padding: 2rem; background: #f4f6f9; min-height: 80vh;">
     """, unsafe_allow_html=True)
     
