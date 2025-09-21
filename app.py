@@ -341,17 +341,13 @@ def show_landing_page():
                 <a href="#" class="nav-link">Technology</a>
                 <a href="#" class="nav-link" onclick="document.getElementById('dashboard-btn').click();">Dashboard</a>
             </div>
-            <div class="nav-actions">
-                <button class="nav-btn secondary">Sign In</button>
-                <button class="nav-btn primary">Get Started</button>
-            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
     
     # Hero Section with Background Image
     st.markdown(f"""
-    <div class="hero-section" style="background-image: url('attached_assets/stock_images/dramatic_rocky_cliff_a3d1ebb9.jpg');">
+    <div class="hero-section" style="background-image: url('attached_assets/image_1758440882152.png');">
         <div class="hero-overlay">
             <div class="hero-content">
                 <h1 class="hero-title">Advanced Rockfall Prediction System</h1>

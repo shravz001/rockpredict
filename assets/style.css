@@ -185,7 +185,7 @@ header {visibility: hidden;}
 
 /* Landing Page Styles */
 .landing-nav {
-    background: rgba(30, 64, 175, 0.95);
+    background: rgba(30, 41, 59, 0.95);
     padding: 1rem 0;
     position: fixed;
     top: 0;
@@ -254,12 +254,12 @@ header {visibility: hidden;}
 
 .nav-btn.secondary:hover {
     background: white;
-    color: #1e40af;
+    color: #1e293b;
 }
 
 .nav-btn.primary {
     background: white;
-    color: #1e40af;
+    color: #1e293b;
 }
 
 .nav-btn.primary:hover {
@@ -333,14 +333,14 @@ header {visibility: hidden;}
 }
 
 .hero-btn.primary {
-    background: #1e40af;
+    background: #1e293b;
     color: white;
 }
 
 .hero-btn.primary:hover {
-    background: #1e3a8a;
+    background: #0f172a;
     transform: translateY(-3px);
-    box-shadow: 0 10px 20px rgba(30, 64, 175, 0.3);
+    box-shadow: 0 10px 20px rgba(30, 41, 59, 0.3);
 }
 
 .hero-btn.secondary {
@@ -351,13 +351,13 @@ header {visibility: hidden;}
 
 .hero-btn.secondary:hover {
     background: white;
-    color: #1e40af;
+    color: #1e293b;
     transform: translateY(-3px);
 }
 
 /* Statistics Section */
 .stats-section {
-    background: rgba(30, 64, 175, 0.1);
+    background: rgba(30, 41, 59, 0.1);
     padding: 4rem 2rem;
     margin-top: -100px;
     position: relative;
@@ -396,7 +396,7 @@ header {visibility: hidden;}
 .stat-number {
     font-size: 2.5rem;
     font-weight: 700;
-    color: #1e40af;
+    color: #1e293b;
     margin-bottom: 0.5rem;
 }
 
