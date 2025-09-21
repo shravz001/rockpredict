@@ -85,86 +85,213 @@ if 'initialized' not in st.session_state:
     st.session_state.alert_count = 0
 
 def main():
-    # Clean, classic header
-    st.title("AI-Based Rockfall Prediction & Alert System")
-    st.markdown("*Advanced monitoring and prediction system for open-pit mine safety*")
+    # Initialize current page first
+    if 'current_page' not in st.session_state:
+        st.session_state.current_page = "Dashboard"
     
-    # Simple sidebar navigation
-    st.sidebar.title("Navigation")
-    page = st.sidebar.selectbox(
-        "Select Module",
-        ["Real-Time Dashboard", "3D Mine Visualization", "Risk Prediction", 
-         "Alert Management", "Historical Analysis", "Communication Status", "Drone Monitoring", "System Configuration"]
-    )
+    # Modern dashboard layout
+    create_sidebar_navigation()
     
-    # Real-time status indicators using synthetic data for demonstration
+    # Render the selected page content
+    render_page_content(st.session_state.current_page)
+
+def create_sidebar_navigation():
+    """Create modern sidebar navigation"""
+    with st.sidebar:
+        # App header in sidebar
+        st.markdown("""
+        <div style="text-align: center; padding: 1rem 0 2rem 0;">
+            <h2 style="color: #2c3e50; margin: 0; font-size: 1.2rem;">Mine Safety</h2>
+            <p style="color: #6c757d; margin: 0.5rem 0 0 0; font-size: 0.9rem;">Control Panel</p>
+        </div>
+        """, unsafe_allow_html=True)
+        
+        # Navigation menu
+        nav_options = {
+            "Dashboard": "📊",
+            "Live Monitoring": "📡", 
+            "3D Visualization": "🗻",
+            "Risk Analysis": "⚠️",
+            "Alert Center": "🔔",
+            "Historical Data": "📈",
+            "Communications": "📱",
+            "Drone Control": "🚁",
+            "Settings": "⚙️"
+        }
+        
+        st.markdown("### Navigation")
+        
+        # Create navigation buttons
+        for page_name, icon in nav_options.items():
+            if st.button(
+                f"{icon} {page_name}", 
+                key=f"nav_{page_name}",
+                use_container_width=True,
+                type="primary" if st.session_state.current_page == page_name else "secondary"
+            ):
+                st.session_state.current_page = page_name
+                st.rerun()
+        
+        # Quick status in sidebar
+        st.markdown("---")
+        st.markdown("### Quick Status")
+        
+        try:
+            synthetic_data = st.session_state.data_generator.generate_real_time_data()
+            sensors = synthetic_data.get('sensors', [])
+            active_sensors = len([s for s in sensors if s.get('status') == 'online'])
+            total_sensors = len(sensors)
+            
+            st.metric("Active Sensors", f"{active_sensors}/{total_sensors}")
+            
+            risk_levels = [s.get('risk_probability', 0) for s in sensors]
+            avg_risk = np.mean(risk_levels) if risk_levels else 0
+            risk_color = "🔴" if avg_risk >= 0.7 else "🟡" if avg_risk >= 0.3 else "🟢"
+            st.metric("Risk Level", f"{risk_color} {avg_risk*100:.0f}%")
+            
+        except:
+            st.metric("Status", "Loading...")
+
+def render_page_content(page):
+    """Render the content for the selected page"""
+    
+    # Page header
+    st.markdown(f"""
+    <div style="background: #f8f9fa; padding: 1.5rem; border-radius: 8px; margin-bottom: 2rem;">
+        <h1 style="margin: 0; color: #2c3e50;">{get_page_title(page)}</h1>
+        <p style="margin: 0.5rem 0 0 0; color: #6c757d;">{get_page_description(page)}</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Route to page content
+    if page == "Dashboard":
+        show_dashboard_overview()
+    elif page == "Live Monitoring":
+        show_real_time_dashboard()
+    elif page == "3D Visualization":
+        show_3d_visualization()
+    elif page == "Risk Analysis":
+        show_risk_prediction()
+    elif page == "Alert Center":
+        show_alert_management()
+    elif page == "Historical Data":
+        show_historical_analysis()
+    elif page == "Communications":
+        show_communication_status()
+    elif page == "Drone Control":
+        show_drone_monitoring()
+    elif page == "Settings":
+        show_system_configuration()
+
+def get_page_title(page):
+    """Get the display title for a page"""
+    titles = {
+        "Dashboard": "System Dashboard",
+        "Live Monitoring": "Real-Time Monitoring",
+        "3D Visualization": "3D Mine Visualization", 
+        "Risk Analysis": "Risk Prediction Analysis",
+        "Alert Center": "Alert Management",
+        "Historical Data": "Historical Analysis",
+        "Communications": "Communication Status",
+        "Drone Control": "Drone Monitoring",
+        "Settings": "System Configuration"
+    }
+    return titles.get(page, page)
+
+def get_page_description(page):
+    """Get the description for a page"""
+    descriptions = {
+        "Dashboard": "Overview of mine safety system status and key metrics",
+        "Live Monitoring": "Real-time sensor data and monitoring dashboard",
+        "3D Visualization": "Interactive 3D mine visualization with risk zones",
+        "Risk Analysis": "AI-powered rockfall risk prediction and analysis",
+        "Alert Center": "Manage alerts, notifications, and emergency responses",
+        "Historical Data": "Historical trends and analysis of mine safety data",
+        "Communications": "LoRaWAN, radio, and communication system status",
+        "Drone Control": "Drone monitoring and aerial surveillance control",
+        "Settings": "System configuration and preferences"
+    }
+    return descriptions.get(page, "")
+
+def show_dashboard_overview():
+    """Show the main dashboard overview"""
     try:
-        # Generate synthetic data for overview
+        # Get system data
         synthetic_data = st.session_state.data_generator.generate_real_time_data()
         sensors = synthetic_data.get('sensors', [])
         total_sensors = len(sensors)
         active_sensors = len([s for s in sensors if s.get('status') == 'online'])
         
-        # Calculate average risk
+        # Calculate metrics
         risk_levels = [s.get('risk_probability', 0) for s in sensors]
         avg_risk = np.mean(risk_levels) if risk_levels else 0
-        risk_level_text = "critical" if avg_risk >= 0.7 else "high" if avg_risk >= 0.5 else "medium" if avg_risk >= 0.3 else "low"
+        high_risk_sensors = len([s for s in sensors if s.get('risk_probability', 0) > 0.7])
         
-        # Clean system overview
-        st.subheader("System Overview")
-        
+        # Key metrics row
         col1, col2, col3, col4 = st.columns(4)
+        
         with col1:
-            st.metric("System Status", "Online", "Uptime: 99.2%")
+            st.markdown("""
+            <div style="background: white; padding: 2rem; border-radius: 8px; border-left: 4px solid #28a745;">
+                <h3 style="margin: 0; color: #28a745;">System Status</h3>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0; color: #2c3e50;">Online</p>
+                <small style="color: #6c757d;">Uptime: 99.2%</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col2:
-            st.metric("Active Sensors", f"{active_sensors}", f"of {total_sensors} total")
+            st.markdown(f"""
+            <div style="background: white; padding: 2rem; border-radius: 8px; border-left: 4px solid #007bff;">
+                <h3 style="margin: 0; color: #007bff;">Active Sensors</h3>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0; color: #2c3e50;">{active_sensors}</p>
+                <small style="color: #6c757d;">of {total_sensors} total</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col3:
-            risk_level_display = risk_level_text.title()
-            st.metric("Risk Level", risk_level_display, f"Score: {avg_risk*100:.1f}/100")
+            risk_color = "#dc3545" if avg_risk >= 0.7 else "#ffc107" if avg_risk >= 0.3 else "#28a745"
+            risk_text = "Critical" if avg_risk >= 0.7 else "Medium" if avg_risk >= 0.3 else "Low"
+            st.markdown(f"""
+            <div style="background: white; padding: 2rem; border-radius: 8px; border-left: 4px solid {risk_color};">
+                <h3 style="margin: 0; color: {risk_color};">Risk Level</h3>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0; color: #2c3e50;">{risk_text}</p>
+                <small style="color: #6c757d;">Score: {avg_risk*100:.1f}/100</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
         with col4:
-            # Simulate some active alerts based on high-risk sensors
-            high_risk_sensors = len([s for s in sensors if s.get('risk_probability', 0) > 0.7])
-            alert_status = "Requires attention" if high_risk_sensors > 0 else "All clear"
-            st.metric("Active Alerts", high_risk_sensors, alert_status)
+            alert_color = "#dc3545" if high_risk_sensors > 0 else "#28a745"
+            st.markdown(f"""
+            <div style="background: white; padding: 2rem; border-radius: 8px; border-left: 4px solid {alert_color};">
+                <h3 style="margin: 0; color: {alert_color};">Active Alerts</h3>
+                <p style="font-size: 1.5rem; margin: 0.5rem 0; color: #2c3e50;">{high_risk_sensors}</p>
+                <small style="color: #6c757d;">{"Requires attention" if high_risk_sensors > 0 else "All clear"}</small>
+            </div>
+            """, unsafe_allow_html=True)
+        
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # Quick access cards
+        st.subheader("Quick Access")
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            if st.button("📡 Live Monitoring", use_container_width=True):
+                st.session_state.current_page = "Live Monitoring"
+                st.rerun()
+        
+        with col2:
+            if st.button("🗻 3D Visualization", use_container_width=True):
+                st.session_state.current_page = "3D Visualization" 
+                st.rerun()
+        
+        with col3:
+            if st.button("⚠️ Risk Analysis", use_container_width=True):
+                st.session_state.current_page = "Risk Analysis"
+                st.rerun()
+        
     except Exception as e:
-        # Fallback to static metrics if data generation fails
-        col1, col2, col3, col4 = st.columns(4)
-        with col1:
-            st.metric("System Status", "🟡 Limited", "Data generation issue")
-        with col2:
-            st.metric("Active Sensors", "--", "Loading...")
-        with col3:
-            st.metric("Risk Level", "--", "Loading...")
-        with col4:
-            st.metric("Alerts Today", "--", "Loading...")
-    
-    st.divider()
-    
-    # Route to selected page
-    if page == "Real-Time Dashboard":
-        show_real_time_dashboard()
-    elif page == "3D Mine Visualization":
-        show_3d_visualization()
-    elif page == "Risk Prediction":
-        show_risk_prediction()
-    elif page == "Alert Management":
-        show_alert_management()
-    elif page == "Historical Analysis":
-        show_historical_analysis()
-    elif page == "Communication Status":
-        show_communication_status()
-    elif page == "Drone Monitoring":
-        show_drone_monitoring()
-    elif page == "System Configuration":
-        show_system_configuration()
-    
-    # Simple footer
-    st.divider()
-    st.markdown("""
-    <div style="text-align: center; padding: 1rem; color: #6c757d; font-size: 0.9rem;">
-        <p>© 2025 AI Rockfall Prediction System | Mine Safety Technology</p>
-    </div>
-    """, unsafe_allow_html=True)
+        st.error("Error loading dashboard data")
 
 def show_real_time_dashboard():
     st.header("📊 Real-Time Monitoring Dashboard")

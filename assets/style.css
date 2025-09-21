@@ -1,11 +1,12 @@
-/* Classic, Clean Design for AI Rockfall Prediction System */
+/* Modern Modular Dashboard Design */
 
 /* Main App Container */
 .main .block-container {
-    padding: 2rem;
-    background: #ffffff;
-    max-width: 1200px;
+    padding: 1.5rem;
+    background: #f8f9fa;
+    max-width: 1400px;
     margin: 0 auto;
+    min-height: 100vh;
 }
 
 /* Typography - Serif for headings, sans-serif for body */
@@ -64,17 +65,45 @@
     font-size: 0.85rem;
 }
 
-/* Sidebar */
+/* Sidebar - Modern Navigation */
 .sidebar .sidebar-content {
-    background: #f8f9fa;
+    background: #ffffff;
+    border-right: 1px solid #e9ecef;
 }
 
-.sidebar .element-container h1 {
+.sidebar .element-container h1, .sidebar .element-container h3 {
     color: #2c3e50;
     font-family: 'Georgia', serif;
     font-weight: 400;
-    border-bottom: 1px solid #dee2e6;
-    padding-bottom: 0.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Navigation Buttons */
+.stButton > button {
+    width: 100%;
+    text-align: left;
+    margin-bottom: 0.5rem;
+    border-radius: 8px;
+    border: 1px solid transparent;
+    font-weight: 500;
+    padding: 0.75rem 1rem;
+}
+
+.stButton > button[kind="primary"] {
+    background: #2c3e50;
+    color: white;
+    border-color: #2c3e50;
+}
+
+.stButton > button[kind="secondary"] {
+    background: #f8f9fa;
+    color: #495057;
+    border-color: #e9ecef;
+}
+
+.stButton > button[kind="secondary"]:hover {
+    background: #e9ecef;
+    border-color: #2c3e50;
 }
 
 /* Navigation */
