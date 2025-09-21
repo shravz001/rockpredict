@@ -16,6 +16,7 @@ from alerts.notification_system import NotificationSystem
 from communication.lorawan_simulator import LoRaWANSimulator
 from utils.config_manager import ConfigManager
 from dashboard.real_time_dashboard import RealTimeDashboard
+from dashboard.drone_dashboard import DroneDashboard
 from analysis.historical_analysis import HistoricalAnalysis
 from database.database_manager import get_rockfall_db
 
@@ -37,6 +38,7 @@ if 'initialized' not in st.session_state:
     st.session_state.lorawan_sim = LoRaWANSimulator()
     st.session_state.config_manager = ConfigManager()
     st.session_state.dashboard = RealTimeDashboard()
+    st.session_state.drone_dashboard = DroneDashboard()
     st.session_state.historical_analysis = HistoricalAnalysis()
     st.session_state.db_manager = get_rockfall_db()
     st.session_state.last_update = datetime.now()
@@ -51,7 +53,7 @@ def main():
     page = st.sidebar.selectbox(
         "Select Module",
         ["Real-Time Dashboard", "3D Mine Visualization", "Risk Prediction", 
-         "Alert Management", "Historical Analysis", "Communication Status", "System Configuration"]
+         "Alert Management", "Historical Analysis", "Communication Status", "Drone Monitoring", "System Configuration"]
     )
     
     # Real-time status indicators from database
@@ -103,6 +105,8 @@ def main():
         show_historical_analysis()
     elif page == "Communication Status":
         show_communication_status()
+    elif page == "Drone Monitoring":
+        show_drone_monitoring()
     elif page == "System Configuration":
         show_system_configuration()
 
@@ -551,6 +555,10 @@ def show_system_configuration():
                 st.success("Configuration saved successfully!")
             else:
                 st.error("Failed to save configuration")
+
+def show_drone_monitoring():
+    """Show drone monitoring dashboard"""
+    st.session_state.drone_dashboard.render_drone_monitoring_page()
 
 if __name__ == "__main__":
     main()

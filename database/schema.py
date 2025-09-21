@@ -172,6 +172,65 @@ class CommunicationLog(Base):
     response_time = Column(Float)  # Response time in seconds
     gateway_used = Column(String(100))  # For LoRaWAN/radio communications
 
+class DroneFlightLog(Base):
+    __tablename__ = 'drone_flight_logs'
+    
+    id = Column(Integer, primary_key=True)
+    mine_site_id = Column(Integer, ForeignKey('mine_sites.id'))
+    drone_id = Column(String(50), nullable=False)
+    mission_type = Column(String(50), nullable=False)  # patrol, emergency, inspection
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime)
+    flight_status = Column(String(20), nullable=False)  # grounded, flying, hovering, returning, completed
+    battery_start = Column(Float)
+    battery_end = Column(Float)
+    weather_conditions = Column(String(100))
+    flight_path = Column(JSON)  # Store flight path coordinates
+    images_captured = Column(Integer, default=0)
+    risk_alerts_generated = Column(Integer, default=0)
+    total_flight_time = Column(Integer)  # Flight time in minutes
+
+class DroneImageAnalysis(Base):
+    __tablename__ = 'drone_image_analysis'
+    
+    id = Column(Integer, primary_key=True)
+    flight_log_id = Column(Integer, ForeignKey('drone_flight_logs.id'))
+    mine_site_id = Column(Integer, ForeignKey('mine_sites.id'))
+    timestamp = Column(DateTime, nullable=False)
+    image_path = Column(String(500), nullable=False)
+    capture_location = Column(JSON, nullable=False)  # lat, lon, altitude
+    risk_score = Column(Float, nullable=False)
+    risk_level = Column(String(20), nullable=False)  # low, medium, high, critical
+    confidence = Column(Float)
+    analysis_time_ms = Column(Integer)
+    features_detected = Column(JSON)  # Array of detected geological features
+    risk_indicators = Column(JSON)  # Detailed risk analysis data
+    camera_settings = Column(JSON)  # Camera configuration used
+    weather_conditions = Column(String(100))
+    lighting_conditions = Column(String(50))
+    image_quality = Column(String(20))
+    processed = Column(Boolean, default=True)
+
+class DroneAlert(Base):
+    __tablename__ = 'drone_alerts'
+    
+    id = Column(Integer, primary_key=True)
+    image_analysis_id = Column(Integer, ForeignKey('drone_image_analysis.id'))
+    mine_site_id = Column(Integer, ForeignKey('mine_sites.id'))
+    drone_id = Column(String(50), nullable=False)
+    timestamp = Column(DateTime, nullable=False)
+    alert_type = Column(String(50), nullable=False)  # rockfall_risk, sensor_failure_backup, emergency
+    risk_level = Column(String(20), nullable=False)
+    location = Column(JSON, nullable=False)
+    description = Column(Text)
+    recommended_actions = Column(JSON)  # Array of recommended actions
+    auto_generated = Column(Boolean, default=True)
+    sensor_backup_mode = Column(Boolean, default=False)  # True if triggered by sensor failure
+    resolved = Column(Boolean, default=False)
+    resolved_by = Column(String(100))
+    resolved_at = Column(DateTime)
+    notification_sent = Column(Boolean, default=False)
+
 class DatabaseManager:
     """Database manager for handling connections and operations"""
     
