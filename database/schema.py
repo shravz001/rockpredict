@@ -236,24 +236,25 @@ class DatabaseManager:
     
     def __init__(self, database_url=None):
         if database_url is None:
-            # Default to local SQLite for VS Code development
-            # Set DB_TYPE=postgresql in environment for PostgreSQL
-            db_type = os.getenv('DB_TYPE', 'sqlite').lower()
+            # Check for DATABASE_URL environment variable first (preferred for Replit/production)
+            database_url = os.getenv('DATABASE_URL')
             
-            if db_type == 'postgresql':
-                # Local PostgreSQL setup for VS Code
-                db_host = os.getenv('DB_HOST', 'localhost')
-                db_port = os.getenv('DB_PORT', '5432')
-                db_name = os.getenv('DB_NAME', 'rockfall_db')
-                db_user = os.getenv('DB_USER', 'postgres')
-                db_password = os.getenv('DB_PASSWORD', '')
-                database_url = f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
-            else:
-                # SQLite for local VS Code development
-                db_path = os.getenv('DB_PATH', './data/rockfall_prediction.db')
-                # Ensure directory exists
-                os.makedirs(os.path.dirname(db_path) if os.path.dirname(db_path) else '.', exist_ok=True)
-                database_url = f'sqlite:///{db_path}'
+            if database_url is None:
+                # Fallback to individual PostgreSQL environment variables
+                db_host = os.getenv('PGHOST')
+                db_port = os.getenv('PGPORT')
+                db_name = os.getenv('PGDATABASE')
+                db_user = os.getenv('PGUSER')
+                db_password = os.getenv('PGPASSWORD')
+                
+                if all([db_host, db_port, db_name, db_user, db_password]):
+                    database_url = f'postgresql://{db_user}:{db_password}@{db_host}:{db_port}/{db_name}'
+                else:
+                    # Final fallback to SQLite for local development
+                    db_path = os.getenv('DB_PATH', './data/rockfall_prediction.db')
+                    # Ensure directory exists
+                    os.makedirs(os.path.dirname(db_path) if os.path.dirname(db_path) else '.', exist_ok=True)
+                    database_url = f'sqlite:///{db_path}'
         
         try:
             self.engine = create_engine(database_url, echo=False)

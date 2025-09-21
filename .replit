@@ -1,4 +1,4 @@
-modules = ["python-3.11", "postgresql-16"]
+modules = ["python-3.11", "postgresql-16", "python3"]
 [agent]
 integrations = ["twilio_send_message:1.0.0", "python_openai:1.0.0", "python_sendgrid:1.0.0"]
 
@@ -45,10 +45,6 @@ externalPort = 3000
 [[ports]]
 localPort = 35349
 externalPort = 3002
-
-[[ports]]
-localPort = 38507
-externalPort = 3003
 
 [[ports]]
 localPort = 40395
