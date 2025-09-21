@@ -28,6 +28,46 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
+# Load custom CSS for professional styling
+def load_css():
+    try:
+        with open('assets/style.css') as f:
+            st.markdown(f'<style>{f.read()}</style>', unsafe_allow_html=True)
+    except FileNotFoundError:
+        # Clean, classic styling
+        st.markdown("""
+        <style>
+        .main .block-container {
+            padding: 2rem;
+            background: #ffffff;
+            max-width: 1200px;
+        }
+        .main h1, .main h2, .main h3 {
+            color: #2c3e50;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-weight: 400;
+        }
+        .main h1 {
+            text-align: center;
+            border-bottom: 2px solid #e9ecef;
+            padding-bottom: 1rem;
+            margin-bottom: 2rem;
+        }
+        [data-testid="metric-container"] {
+            background: #ffffff;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 1.5rem;
+            margin: 0.5rem 0;
+        }
+        .stSelectbox label {
+            font-weight: 500;
+        }
+        </style>
+        """, unsafe_allow_html=True)
+
+load_css()
+
 # Initialize session state
 if 'initialized' not in st.session_state:
     st.session_state.initialized = True
@@ -45,10 +85,11 @@ if 'initialized' not in st.session_state:
     st.session_state.alert_count = 0
 
 def main():
-    st.title("🏔️ AI-Based Rockfall Prediction & Alert System")
-    st.markdown("**Advanced monitoring and prediction system for open-pit mine safety**")
+    # Clean, classic header
+    st.title("AI-Based Rockfall Prediction & Alert System")
+    st.markdown("*Advanced monitoring and prediction system for open-pit mine safety*")
     
-    # Sidebar navigation
+    # Simple sidebar navigation
     st.sidebar.title("Navigation")
     page = st.sidebar.selectbox(
         "Select Module",
@@ -69,18 +110,22 @@ def main():
         avg_risk = np.mean(risk_levels) if risk_levels else 0
         risk_level_text = "critical" if avg_risk >= 0.7 else "high" if avg_risk >= 0.5 else "medium" if avg_risk >= 0.3 else "low"
         
+        # Clean system overview
+        st.subheader("System Overview")
+        
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("System Status", "🟢 Online", "Uptime: 99.2%")
+            st.metric("System Status", "Online", "Uptime: 99.2%")
         with col2:
-            st.metric("Active Sensors", active_sensors, f"Total: {total_sensors}")
+            st.metric("Active Sensors", f"{active_sensors}", f"of {total_sensors} total")
         with col3:
-            risk_icon = "🔴" if risk_level_text == 'critical' else "🟠" if risk_level_text == 'high' else "🟡" if risk_level_text == 'medium' else "🟢"
-            st.metric("Risk Level", f"{risk_icon} {risk_level_text.title()}", f"Score: {avg_risk*100:.1f}/100")
+            risk_level_display = risk_level_text.title()
+            st.metric("Risk Level", risk_level_display, f"Score: {avg_risk*100:.1f}/100")
         with col4:
             # Simulate some active alerts based on high-risk sensors
             high_risk_sensors = len([s for s in sensors if s.get('risk_probability', 0) > 0.7])
-            st.metric("Active Alerts", high_risk_sensors, f"Total: {high_risk_sensors}")
+            alert_status = "Requires attention" if high_risk_sensors > 0 else "All clear"
+            st.metric("Active Alerts", high_risk_sensors, alert_status)
     except Exception as e:
         # Fallback to static metrics if data generation fails
         col1, col2, col3, col4 = st.columns(4)
@@ -112,6 +157,14 @@ def main():
         show_drone_monitoring()
     elif page == "System Configuration":
         show_system_configuration()
+    
+    # Simple footer
+    st.divider()
+    st.markdown("""
+    <div style="text-align: center; padding: 1rem; color: #6c757d; font-size: 0.9rem;">
+        <p>© 2025 AI Rockfall Prediction System | Mine Safety Technology</p>
+    </div>
+    """, unsafe_allow_html=True)
 
 def show_real_time_dashboard():
     st.header("📊 Real-Time Monitoring Dashboard")
