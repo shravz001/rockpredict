@@ -13,4 +13,3 @@ font = "sans serif"
 
 [browser]
 gatherUsageStats = false
-showErrorDetails = false

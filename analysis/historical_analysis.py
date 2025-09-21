@@ -20,7 +20,7 @@ class HistoricalAnalysis:
         # Create time series data
         end_date = datetime.now()
         start_date = end_date - timedelta(days=days)
-        date_range = pd.date_range(start=start_date, end=end_date, freq='H')
+        date_range = pd.date_range(start=start_date, end=end_date, freq='h')
         
         # Generate synthetic data with realistic patterns
         data = []

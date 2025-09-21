@@ -126,7 +126,7 @@ class RockfallDatabaseManager:
                     "signal_strength": sensor.signal_strength,
                     "latest_value": latest_reading.value if latest_reading else None,
                     "latest_timestamp": latest_reading.timestamp.isoformat() if latest_reading else None,
-                    "installation_date": sensor.installation_date.isoformat() if sensor.installation_date else None
+                    "installation_date": sensor.installation_date.isoformat() if sensor.installation_date is not None else None
                 })
             
             return sensor_data
@@ -210,7 +210,8 @@ class RockfallDatabaseManager:
             
             session.add(assessment)
             session.commit()
-            return assessment.id
+            session.refresh(assessment)
+            return getattr(assessment, 'id')
             
         except Exception as e:
             session.rollback()
@@ -263,7 +264,8 @@ class RockfallDatabaseManager:
             
             session.add(alert)
             session.commit()
-            return alert.id
+            session.refresh(alert)
+            return getattr(alert, 'id')
             
         except Exception as e:
             session.rollback()
@@ -379,7 +381,7 @@ class RockfallDatabaseManager:
             ).all()
             
             if comm_logs:
-                successful_comms = sum(1 for log in comm_logs if log.success)
+                successful_comms = sum(1 for log in comm_logs if bool(log.success))
                 comm_success_rate = successful_comms / len(comm_logs)
             else:
                 comm_success_rate = 0
