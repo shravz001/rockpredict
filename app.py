@@ -142,6 +142,13 @@ def show_real_time_dashboard():
         st.warning(f"📡 Using synthetic data due to database issue: {str(e)}")
         current_data = st.session_state.data_generator.generate_real_time_data()
     
+    # Debug: Show what data we're actually using
+    sensors_count = len(current_data.get('sensors', []))
+    st.write(f"**Debug**: Using data with {sensors_count} sensors")
+    if sensors_count > 0:
+        st.write(f"**Debug**: First sensor status: {current_data['sensors'][0].get('status', 'unknown')}")
+        st.write(f"**Debug**: First sensor risk: {current_data['sensors'][0].get('risk_probability', 0):.2%}")
+    
     # Use the professional dashboard
     try:
         st.session_state.dashboard.render_full_dashboard(
