@@ -343,10 +343,20 @@ def show_landing_page():
                     Protect lives and infrastructure with AI-powered geological monitoring, 
                     real-time risk assessment, and early warning systems.
                 </p>
+                <div class="hero-button-container">
+                    <div class="hero-button-placeholder">
+                        <!-- Streamlit button will be positioned here via CSS -->
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Position the Streamlit button over the hero section
+    if st.button("Click Here", key="access_system", help="Access the complete monitoring dashboard", use_container_width=False):
+        st.session_state.current_page = "Dashboard"
+        st.rerun()
     
     # Key Statistics Section
     try:
@@ -404,13 +414,44 @@ def show_landing_page():
         </div>
         """, unsafe_allow_html=True)
     
-    # Access button below the statistics section
-    st.markdown("<br>", unsafe_allow_html=True)
-    col1, col2, col3 = st.columns([2, 1, 2])
-    with col2:
-        if st.button("Click Here", key="access_system", help="Access the complete monitoring dashboard", use_container_width=True):
-            st.session_state.current_page = "Dashboard"
-            st.rerun()
+    # Position the button over the hero section with CSS
+    st.markdown("""
+    <style>
+    /* Position the last Streamlit button over the hero section */
+    [data-testid="stAppViewContainer"] > div > div:last-child [data-testid="baseButton-primary"] {
+        position: absolute !important;
+        top: 60vh !important;
+        left: 50% !important;
+        transform: translateX(-50%) !important;
+        z-index: 1000 !important;
+        background: #1e293b !important;
+        color: white !important;
+        padding: 1rem 2.5rem !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+    }
+    
+    [data-testid="stAppViewContainer"] > div > div:last-child [data-testid="baseButton-primary"]:hover {
+        background: #0f172a !important;
+        transform: translateX(-50%) translateY(-3px) !important;
+        box-shadow: 0 8px 20px rgba(30, 41, 59, 0.4) !important;
+    }
+    
+    .hero-button-container {
+        margin-top: 2rem;
+        display: flex;
+        justify-content: center;
+    }
+    
+    .hero-section {
+        position: relative;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
 def show_real_time_dashboard():
     st.header("📊 Real-Time Monitoring Dashboard")
