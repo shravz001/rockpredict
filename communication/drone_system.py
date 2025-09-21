@@ -24,7 +24,7 @@ class DroneSystem:
     def __init__(self):
         self.drone_id = "DRONE_001"
         self.is_active = False
-        self.current_position = {"lat": 39.7392, "lon": -104.9903, "altitude": 100}
+        self.current_position = {"lat": 40.5232, "lon": -112.1500, "altitude": 150}  # Bingham Canyon Mine area
         self.battery_level = 85.0
         self.flight_status = "grounded"  # grounded, flying, hovering, returning
         self.image_capture_enabled = True
