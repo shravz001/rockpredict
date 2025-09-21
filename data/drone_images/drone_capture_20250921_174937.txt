@@ -1,0 +1,3 @@
+Drone image captured at 2025-09-21 17:49:37.878320
+Simulated mode - OpenCV not available
+Analysis performed using fallback algorithms
