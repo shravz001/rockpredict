@@ -322,7 +322,7 @@ def show_dashboard_overview():
 def show_landing_page():
     """Show the professional landing page"""
     
-    # Hide sidebar for landing page
+    # Hide sidebar for landing page, but show a subtle access hint
     st.markdown("""
     <style>
     [data-testid="stSidebar"] {display: none !important;}
@@ -331,6 +331,13 @@ def show_landing_page():
     .main .block-container {margin-left: 0px !important; padding-left: 0px !important;}
     </style>
     """, unsafe_allow_html=True)
+    
+    # Add a subtle floating access button
+    col1, col2, col3 = st.columns([6,1,1])
+    with col3:
+        if st.button("💎 Access Full System", key="access_system", help="View the complete monitoring dashboard"):
+            st.session_state.current_page = "Dashboard"
+            st.rerun()
     
     # Professional Navigation Bar
     st.markdown("""
