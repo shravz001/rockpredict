@@ -1,4 +1,5 @@
 import os
+import sys
 import json
 from datetime import datetime, timedelta
 import numpy as np
@@ -87,14 +88,56 @@ class NotificationSystem:
             }
     
     def send_email_alert(self, email_address, subject, message, from_email="alerts@mine-safety.com"):
-        """Send email alert"""
-        # Simulate email sending - in real implementation would use SendGrid or similar
-        return {
-            'success': True,
-            'message': f'Email alert sent to {email_address}',
-            'subject': subject,
-            'content': message
-        }
+        """Send email alert via SendGrid"""
+        try:
+            # Get SendGrid API key from environment
+            sendgrid_key = os.environ.get('SENDGRID_API_KEY')
+            if not sendgrid_key:
+                return {
+                    'success': False,
+                    'error': 'SendGrid API key not configured'
+                }
+            
+            # Import SendGrid (from blueprint integration)
+            from sendgrid import SendGridAPIClient
+            from sendgrid.helpers.mail import Mail, Email, To, Content
+            
+            # Create SendGrid client
+            sg = SendGridAPIClient(sendgrid_key)
+            
+            # Create email message
+            mail = Mail(
+                from_email=Email(from_email),
+                to_emails=To(email_address),
+                subject=subject
+            )
+            
+            # Set content (prefer HTML, fallback to plain text)
+            if '<' in message and '>' in message:  # Basic HTML detection
+                mail.content = Content("text/html", message)
+            else:
+                mail.content = Content("text/plain", message)
+            
+            # Send email
+            response = sg.send(mail)
+            
+            return {
+                'success': True,
+                'message': f'Email sent successfully to {email_address}',
+                'sendgrid_status': response.status_code,
+                'subject': subject
+            }
+            
+        except ImportError:
+            return {
+                'success': False,
+                'error': 'SendGrid library not available - install sendgrid package'
+            }
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Failed to send email via SendGrid: {str(e)}'
+            }
     
     def trigger_audio_siren(self, zone, severity):
         """Simulate audio siren activation"""
@@ -305,3 +348,30 @@ class NotificationSystem:
         }
         
         return action_plans.get(risk_level, action_plans['medium'])
+    
+    def send_alert_notification(self, alert_type: str, risk_level: str, message: str, location: dict = None) -> dict:
+        """Send alert notification through appropriate channels (compatibility method for drone integration)"""
+        try:
+            # Create alert data structure
+            alert_data = {
+                'type': alert_type,
+                'severity': risk_level,
+                'message': message,
+                'zone': f"Zone_{location.get('lat', 0):.3f}_{location.get('lon', 0):.3f}" if location else "Mine_Site",
+                'location': location
+            }
+            
+            # Use comprehensive alert system
+            return self.send_comprehensive_alert(
+                alert_data=alert_data,
+                phone_number="+1234567890",  # Would be configured per mine
+                email_address="safety@mine-site.com",  # Would be configured per mine
+                enable_audio=True,
+                enable_visual=True
+            )
+            
+        except Exception as e:
+            return {
+                'success': False,
+                'error': f'Failed to send alert notification: {str(e)}'
+            }

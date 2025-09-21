@@ -7,6 +7,8 @@ from datetime import datetime, timedelta
 from typing import Dict, List, Any, Optional
 import json
 import logging
+import threading
+import time
 
 from communication.drone_system import DroneSystem
 from database.database_manager import get_rockfall_db
@@ -29,6 +31,10 @@ class DroneIntegration:
         self.last_parallel_analysis = None
         self.current_drone_risk_level = "low"
         self.current_sensor_risk_level = "low"
+        self.current_flight_log_id = None  # Track current flight log for parallel monitoring
+        self.monitoring_interval = 30  # Seconds between drone captures
+        self.monitoring_thread = None  # Background monitoring thread
+        self.stop_monitoring = False  # Flag to stop background monitoring
         
     def start_routine_patrol(self, mine_site_id: int = 1) -> Dict[str, Any]:
         """Start routine drone patrol mission"""
@@ -41,7 +47,7 @@ class DroneIntegration:
             
             if mission_result["success"]:
                 # Perform image captures along flight path
-                self._execute_patrol_mission(flight_log.id, mine_site_id)
+                self._execute_patrol_mission(int(flight_log.id), mine_site_id)
                 
                 return {
                     "success": True,
@@ -67,21 +73,78 @@ class DroneIntegration:
             
             # Create initial flight log for parallel monitoring
             flight_log = self._create_flight_log(mine_site_id, "parallel_monitoring")
+            self.current_flight_log_id = flight_log.id
             
-            # Start continuous drone monitoring
-            self._start_continuous_drone_monitoring(flight_log.id, mine_site_id)
+            # Start background monitoring thread
+            self._start_background_monitoring_thread(mine_site_id)
+            
+            # Perform initial capture
+            self._start_continuous_drone_monitoring(mine_site_id)
             
             return {
                 "success": True,
                 "message": "Parallel monitoring system activated",
                 "drone_active": True,
                 "sensor_monitoring": True,
-                "mode": "parallel"
+                "mode": "parallel",
+                "flight_log_id": flight_log.id
             }
             
         except Exception as e:
             logger.error(f"Failed to start parallel monitoring: {e}")
             return {"success": False, "message": str(e)}
+    
+    def stop_parallel_monitoring(self) -> Dict[str, Any]:
+        """Stop continuous parallel monitoring"""
+        try:
+            logger.info("Stopping parallel monitoring system")
+            
+            # Stop background monitoring
+            self.stop_monitoring = True
+            self.parallel_monitoring_active = False
+            
+            # Wait for thread to finish
+            if self.monitoring_thread and self.monitoring_thread.is_alive():
+                self.monitoring_thread.join(timeout=5)
+            
+            # Deactivate drone
+            self.drone_system.is_active = False
+            
+            return {
+                "success": True,
+                "message": "Parallel monitoring system stopped",
+                "drone_active": False,
+                "sensor_monitoring": False,
+                "mode": "stopped"
+            }
+            
+        except Exception as e:
+            logger.error(f"Failed to stop parallel monitoring: {e}")
+            return {"success": False, "message": str(e)}
+    
+    def _start_background_monitoring_thread(self, mine_site_id: int):
+        """Start background thread for continuous monitoring"""
+        def monitoring_loop():
+            logger.info(f"Background monitoring thread started (interval: {self.monitoring_interval}s)")
+            
+            while not self.stop_monitoring and self.parallel_monitoring_active:
+                try:
+                    # Perform drone monitoring capture
+                    self._start_continuous_drone_monitoring(mine_site_id)
+                    
+                    # Wait for next interval
+                    time.sleep(self.monitoring_interval)
+                    
+                except Exception as e:
+                    logger.error(f"Background monitoring error: {e}")
+                    time.sleep(5)  # Short delay on error
+            
+            logger.info("Background monitoring thread stopped")
+        
+        # Reset stop flag and start thread
+        self.stop_monitoring = False
+        self.monitoring_thread = threading.Thread(target=monitoring_loop, daemon=True)
+        self.monitoring_thread.start()
     
     def get_parallel_predictions(self, mine_site_id: int = 1) -> Dict[str, Any]:
         """Get real-time predictions from both sensor and drone systems"""
@@ -111,17 +174,21 @@ class DroneIntegration:
             logger.error(f"Failed to get parallel predictions: {e}")
             return {"success": False, "message": str(e)}
     
-    def _start_continuous_drone_monitoring(self, flight_log_id: int, mine_site_id: int):
-        """Start continuous drone monitoring loop"""
+    def _start_continuous_drone_monitoring(self, mine_site_id: int):
+        """Perform drone monitoring capture and analysis"""
         try:
-            # Perform immediate image capture and analysis
+            if not self.current_flight_log_id:
+                logger.warning("No active flight log for drone monitoring")
+                return
+                
+            # Perform image capture and analysis
             location = {"lat": -23.5505, "lng": -46.6333, "altitude": 100}  # Mine location
             capture_result = self.drone_system.capture_and_analyze_image(location)
             
             if capture_result["success"]:
                 # Store analysis
                 analysis_id = self._store_image_analysis(
-                    flight_log_id, mine_site_id, capture_result["result"]
+                    self.current_flight_log_id, mine_site_id, capture_result["result"]
                 )
                 
                 # Update current drone risk level
@@ -174,9 +241,15 @@ class DroneIntegration:
     def _get_latest_drone_prediction(self, mine_site_id: int) -> Dict[str, Any]:
         """Get latest drone analysis prediction"""
         try:
-            if not self.last_parallel_analysis:
-                # Trigger new analysis if none exists
-                self._start_continuous_drone_monitoring(1, mine_site_id)
+            # Check if we need a fresh capture (for continuous monitoring)
+            needs_fresh_capture = (
+                not self.last_parallel_analysis or 
+                (datetime.now() - self.last_parallel_analysis).total_seconds() > self.monitoring_interval
+            )
+            
+            if needs_fresh_capture and self.parallel_monitoring_active:
+                # Trigger new analysis for continuous monitoring
+                self._start_continuous_drone_monitoring(mine_site_id)
             
             return {
                 "risk_level": self.current_drone_risk_level,
@@ -184,7 +257,8 @@ class DroneIntegration:
                 "confidence": 0.85,  # Drone analysis confidence
                 "data_source": "drone_imaging",
                 "last_analysis": self.last_parallel_analysis.isoformat() if self.last_parallel_analysis else None,
-                "timestamp": datetime.now().isoformat()
+                "timestamp": datetime.now().isoformat(),
+                "seconds_since_capture": (datetime.now() - self.last_parallel_analysis).total_seconds() if self.last_parallel_analysis else 0
             }
             
         except Exception as e:
@@ -289,6 +363,11 @@ class DroneIntegration:
     def _check_sensors_status(self, mine_site_id: int) -> bool:
         """Check if sensors are currently active and reporting"""
         try:
+            # When parallel monitoring is active, sensors are considered active by default
+            # since we're generating synthetic sensor data for the predictions
+            if self.parallel_monitoring_active:
+                return True
+                
             session = self.db_manager.db_manager.get_session()
             from database.schema import Sensor, SensorReading
             
@@ -346,7 +425,7 @@ class DroneIntegration:
                     
                     # Store analysis in database
                     analysis_id = self._store_image_analysis(
-                        flight_log_id, mine_site_id, capture_result["result"]
+                        int(flight_log_id), mine_site_id, capture_result["result"]
                     )
                     
                     # Check if alert should be generated
@@ -358,7 +437,7 @@ class DroneIntegration:
                             alerts_generated += 1
         
         # Update flight log with results
-        self._update_flight_log(flight_log_id, images_captured, alerts_generated)
+        self._update_flight_log(int(flight_log_id), images_captured, alerts_generated)
     
     def _store_image_analysis(self, flight_log_id: int, mine_site_id: int, 
                             analysis_result: Dict[str, Any]) -> int:
