@@ -456,3 +456,271 @@ class DroneDashboard:
                 "images_captured_today": 0,
                 "active_alerts": 0
             }
+    
+    def _render_parallel_predictions(self, predictions: Dict[str, Any]):
+        """Render parallel predictions from sensors and drone"""
+        st.subheader("🎯 Real-Time Risk Assessment")
+        
+        sensor_pred = predictions.get("sensor_prediction", {})
+        drone_pred = predictions.get("drone_prediction", {})
+        combined_pred = predictions.get("combined_prediction", {})
+        
+        # Main combined prediction display
+        col1, col2, col3 = st.columns([2, 1, 1])
+        
+        with col1:
+            risk_level = combined_pred.get("risk_level", "unknown")
+            risk_score = combined_pred.get("risk_score", 0.0)
+            
+            # Color based on risk level
+            risk_colors = {
+                "low": "green",
+                "medium": "orange", 
+                "high": "red",
+                "critical": "red"
+            }
+            color = risk_colors.get(risk_level, "gray")
+            
+            st.markdown(f"""
+            ### Combined Risk Assessment
+            **Risk Level:** :{color}[{risk_level.upper()}]  
+            **Risk Score:** {risk_score:.2f}  
+            **Confidence:** {combined_pred.get('confidence', 0):.1%}  
+            **Agreement:** {combined_pred.get('agreement', 0):.1%}
+            """)
+        
+        with col2:
+            st.metric(
+                "Sensor Weight",
+                f"{combined_pred.get('sensor_weight', 0):.1%}",
+                help="How much the sensor data influences the final prediction"
+            )
+        
+        with col3:
+            st.metric(
+                "Drone Weight", 
+                f"{combined_pred.get('drone_weight', 0):.1%}",
+                help="How much the drone analysis influences the final prediction"
+            )
+        
+        # Detailed predictions side by side
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### 📡 Sensor Prediction")
+            if sensor_pred.get("error"):
+                st.error(f"Sensor Error: {sensor_pred['error']}")
+            else:
+                sensor_risk = sensor_pred.get("risk_level", "unknown")
+                sensor_color = risk_colors.get(sensor_risk, "gray")
+                
+                st.markdown(f"""
+                **Risk Level:** :{sensor_color}[{sensor_risk.upper()}]  
+                **Risk Score:** {sensor_pred.get('risk_score', 0):.2f}  
+                **Confidence:** {sensor_pred.get('confidence', 0):.1%}  
+                **Active Sensors:** {sensor_pred.get('sensor_count', 0)}  
+                **Last Update:** {sensor_pred.get('timestamp', 'Unknown')[-8:]}
+                """)
+        
+        with col2:
+            st.markdown("#### 🚁 Drone Analysis")
+            if drone_pred.get("error"):
+                st.error(f"Drone Error: {drone_pred['error']}")
+            else:
+                drone_risk = drone_pred.get("risk_level", "unknown")
+                drone_color = risk_colors.get(drone_risk, "gray")
+                
+                st.markdown(f"""
+                **Risk Level:** :{drone_color}[{drone_risk.upper()}]  
+                **Risk Score:** {drone_pred.get('risk_score', 0):.2f}  
+                **Confidence:** {drone_pred.get('confidence', 0):.1%}  
+                **Data Source:** {drone_pred.get('data_source', 'Unknown')}  
+                **Last Analysis:** {drone_pred.get('last_analysis', 'Never')[-8:] if drone_pred.get('last_analysis') else 'Never'}
+                """)
+        
+        # Risk trend visualization
+        if st.checkbox("📊 Show Risk Trend Simulation"):
+            self._render_risk_trend_chart(sensor_pred, drone_pred, combined_pred)
+    
+    def _render_system_status(self, monitoring_status: Dict[str, Any]):
+        """Render system monitoring status"""
+        st.subheader("🔍 System Status")
+        
+        col1, col2, col3 = st.columns(3)
+        
+        with col1:
+            sensors_active = monitoring_status.get("sensors_active", False)
+            status_icon = "🟢" if sensors_active else "🔴"
+            st.metric("Sensor Network", f"{status_icon} {'Active' if sensors_active else 'Inactive'}")
+        
+        with col2:
+            drone_active = monitoring_status.get("drone_active", False)
+            status_icon = "🟢" if drone_active else "🔴"
+            st.metric("Drone System", f"{status_icon} {'Active' if drone_active else 'Inactive'}")
+        
+        with col3:
+            parallel_mode = monitoring_status.get("parallel_mode", False)
+            status_icon = "🟢" if parallel_mode else "🟡"
+            st.metric("Parallel Mode", f"{status_icon} {'Running' if parallel_mode else 'Standby'}")
+    
+    def _render_risk_trend_chart(self, sensor_pred: Dict, drone_pred: Dict, combined_pred: Dict):
+        """Render simulated risk trend chart"""
+        import random
+        
+        # Generate simulated trend data
+        timestamps = [datetime.now() - timedelta(minutes=x) for x in range(30, 0, -1)]
+        
+        sensor_trend = [max(0, min(1, sensor_pred.get("risk_score", 0.3) + random.uniform(-0.2, 0.2))) for _ in timestamps]
+        drone_trend = [max(0, min(1, drone_pred.get("risk_score", 0.3) + random.uniform(-0.2, 0.2))) for _ in timestamps]
+        combined_trend = [(s + d) / 2 for s, d in zip(sensor_trend, drone_trend)]
+        
+        fig = go.Figure()
+        
+        fig.add_trace(go.Scatter(
+            x=timestamps,
+            y=sensor_trend,
+            name="Sensor Risk",
+            line=dict(color="blue", width=2)
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=timestamps,
+            y=drone_trend,
+            name="Drone Risk", 
+            line=dict(color="orange", width=2)
+        ))
+        
+        fig.add_trace(go.Scatter(
+            x=timestamps,
+            y=combined_trend,
+            name="Combined Risk",
+            line=dict(color="red", width=3)
+        ))
+        
+        fig.update_layout(
+            title="Risk Level Trends (Last 30 Minutes)",
+            xaxis_title="Time",
+            yaxis_title="Risk Score",
+            yaxis=dict(range=[0, 1]),
+            height=400
+        )
+        
+        st.plotly_chart(fig, use_container_width=True)
+    
+    def _render_detailed_analysis(self, predictions: Dict[str, Any]):
+        """Render detailed analysis information"""
+        st.subheader("📊 Detailed Analysis")
+        
+        sensor_pred = predictions.get("sensor_prediction", {})
+        drone_pred = predictions.get("drone_prediction", {})
+        
+        col1, col2 = st.columns(2)
+        
+        with col1:
+            st.markdown("#### Sensor Data Analysis")
+            if not sensor_pred.get("error"):
+                st.json({
+                    "risk_level": sensor_pred.get("risk_level"),
+                    "risk_score": sensor_pred.get("risk_score"),
+                    "confidence": sensor_pred.get("confidence"),
+                    "sensor_count": sensor_pred.get("sensor_count"),
+                    "data_source": sensor_pred.get("data_source")
+                })
+            else:
+                st.error(sensor_pred.get("error"))
+        
+        with col2:
+            st.markdown("#### Drone Analysis")
+            if not drone_pred.get("error"):
+                st.json({
+                    "risk_level": drone_pred.get("risk_level"),
+                    "risk_score": drone_pred.get("risk_score"),
+                    "confidence": drone_pred.get("confidence"),
+                    "data_source": drone_pred.get("data_source"),
+                    "last_analysis": drone_pred.get("last_analysis")
+                })
+            else:
+                st.error(drone_pred.get("error"))
+    
+    def _render_advanced_controls(self):
+        """Render advanced drone control interface"""
+        st.subheader("🔧 Advanced Drone Controls")
+        
+        # Get drone integration status  
+        try:
+            drone_status = self.drone_integration.get_drone_monitoring_status()
+            
+            # Status overview
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                st.metric("Flight Status", "Active" if drone_status.get("drone_status", {}).get("is_active") else "Inactive")
+            
+            with col2:
+                battery = drone_status.get("drone_status", {}).get("battery_level", 0)
+                st.metric("Battery Level", f"{battery}%")
+            
+            with col3:
+                backup_mode = drone_status.get("backup_mode_active", False)
+                st.metric("Backup Mode", "Active" if backup_mode else "Standby")
+            
+            with col4:
+                last_check = drone_status.get("last_sensor_check")
+                if last_check:
+                    last_check_str = datetime.fromisoformat(last_check).strftime("%H:%M:%S")
+                else:
+                    last_check_str = "Never"
+                st.metric("Last Sensor Check", last_check_str)
+                
+            # Mission controls
+            st.markdown("#### Mission Controls")
+            col1, col2, col3 = st.columns(3)
+            
+            with col1:
+                if st.button("🚁 Start Patrol"):
+                    result = self.drone_integration.start_routine_patrol()
+                    if result["success"]:
+                        st.success("Patrol started!")
+                        st.rerun()
+            
+            with col2:
+                if st.button("🆘 Emergency Scan"):
+                    result = self.drone_integration.check_sensor_status_and_activate_backup()
+                    if result["success"]:
+                        st.success("Emergency scan initiated!")
+                        st.rerun()
+            
+            with col3:
+                if st.button("🏠 Return to Base"):
+                    result = self.drone_system.land_drone()
+                    if result["success"]:
+                        st.success("Returning to base!")
+                        st.rerun()
+        
+        except Exception as e:
+            st.error(f"Error loading advanced controls: {e}")
+    
+    def _render_fallback_dashboard(self):
+        """Render fallback dashboard when parallel monitoring fails"""
+        st.warning("⚠️ Parallel monitoring unavailable. Showing basic drone controls.")
+        
+        # Basic drone status
+        try:
+            drone_status = self.drone_system.get_drone_status()
+            
+            col1, col2, col3 = st.columns(3)
+            with col1:
+                st.metric("Drone Status", "Active" if drone_status.get("is_active") else "Inactive")
+            with col2:
+                st.metric("Battery", f"{drone_status.get('battery_level', 0)}%")
+            with col3:
+                st.metric("Flight Status", drone_status.get("flight_status", "Unknown"))
+            
+            # Basic controls
+            if st.button("🚁 Activate Drone"):
+                self.drone_system.is_active = True
+                st.success("Drone activated!")
+                st.rerun()
+                
+        except Exception as e:
+            st.error(f"Error in fallback mode: {e}")
