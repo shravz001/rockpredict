@@ -172,7 +172,7 @@ class RockfallPredictor:
             y=risks,
             mode='lines+markers',
             name='Risk Probability',
-            line=dict(color='blue', width=2),
+            line=dict(color='#64748b', width=2),
             marker=dict(color=colors, size=8)
         ))
         

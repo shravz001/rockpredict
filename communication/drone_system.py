@@ -67,23 +67,28 @@ class DroneSystem:
         }
     
     def _generate_flight_path(self, mission_type: str):
-        """Generate flight path based on mission type"""
-        base_lat, base_lon = 39.7392, -104.9903
+        """Generate flight path based on mission type - over mine terrain"""
+        # Bingham Canyon Mine area (Utah) - actual open-pit mine coordinates
+        base_lat, base_lon = 40.5232, -112.1500
         
         if mission_type == "patrol":
-            # Create a grid pattern over the mine area
+            # Create a grid pattern over the mine area with terrain-following altitudes
             points = []
-            for i in range(5):
-                for j in range(4):
-                    lat_offset = (i - 2) * 0.001
-                    lon_offset = (j - 1.5) * 0.001
-                    altitude = 100 + random.randint(-20, 30)
+            for i in range(6):
+                for j in range(5):
+                    lat_offset = (i - 2.5) * 0.002  # Wider coverage
+                    lon_offset = (j - 2) * 0.002
+                    # Terrain-following altitude (higher over ridges, lower in valleys)
+                    base_altitude = 150
+                    terrain_variation = random.randint(-40, 60)
+                    altitude = base_altitude + terrain_variation
                     points.append({
                         "lat": base_lat + lat_offset,
                         "lon": base_lon + lon_offset,
                         "altitude": altitude,
                         "capture_image": True,
-                        "hover_time": 5  # seconds
+                        "hover_time": 8,  # longer hover for detailed analysis
+                        "scan_radius": 200  # meters
                     })
             self.flight_path = points
             

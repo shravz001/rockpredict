@@ -29,7 +29,7 @@ header {visibility: hidden;}
 
 /* Professional Header */
 .professional-header {
-    background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 100%);
+    background: linear-gradient(135deg, #475569 0%, #64748b 100%);
     color: white;
     padding: 1rem 2rem;
     margin: 0;
@@ -38,7 +38,7 @@ header {visibility: hidden;}
 
 /* Typography - Serif for headings, sans-serif for body */
 .main h1, .main h2, .main h3 {
-    color: #2c3e50;
+    color: #374151;
     font-family: 'Georgia', 'Times New Roman', serif;
     font-weight: 400;
     margin-bottom: 1rem;
@@ -100,7 +100,7 @@ header {visibility: hidden;}
 }
 
 .sidebar .element-container h1, .sidebar .element-container h3 {
-    color: #1e40af;
+    color: #374151;
     font-family: 'Segoe UI', 'Roboto', sans-serif;
     font-weight: 600;
     margin-bottom: 1rem;
@@ -108,7 +108,7 @@ header {visibility: hidden;}
 
 /* Professional Company Branding */
 .company-branding {
-    background: #1e40af;
+    background: #64748b;
     color: white;
     padding: 1.5rem;
     margin: -1rem -1rem 2rem -1rem;
@@ -140,9 +140,9 @@ header {visibility: hidden;}
 }
 
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+    background: linear-gradient(135deg, #475569 0%, #6b7280 100%);
     color: white;
-    box-shadow: 0 2px 4px rgba(51, 65, 85, 0.3);
+    box-shadow: 0 2px 4px rgba(107, 114, 128, 0.3);
 }
 
 .stButton > button[kind="secondary"] {
@@ -415,7 +415,7 @@ header {visibility: hidden;}
 
 /* Buttons - Simple and professional */
 .stButton > button {
-    background: #2c3e50;
+    background: #6b7280;
     color: white;
     border: none;
     border-radius: 4px;
@@ -425,7 +425,7 @@ header {visibility: hidden;}
 }
 
 .stButton > button:hover {
-    background: #34495e;
+    background: #7c8894;
 }
 
 /* Dividers */

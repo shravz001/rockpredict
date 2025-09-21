@@ -279,10 +279,10 @@ class DroneDashboard:
         """Render flight path map"""
         st.subheader("Flight Path & Current Position")
         
-        # Get current position
+        # Get current position over mine terrain
         current_pos = drone_status.get("current_position", {})
-        lat = current_pos.get("lat", 39.7392)
-        lon = current_pos.get("lon", -104.9903)
+        lat = current_pos.get("lat", 40.5232)  # Bingham Canyon Mine area
+        lon = current_pos.get("lon", -112.1500)
         
         # Create map visualization
         fig = go.Figure()
@@ -306,19 +306,19 @@ class DroneDashboard:
                 lat=path_lats,
                 lon=path_lons,
                 mode="markers+lines",
-                marker=dict(size=8, color="blue"),
-                line=dict(width=2, color="blue"),
+                marker=dict(size=8, color="#64748b"),
+                line=dict(width=2, color="#64748b"),
                 text="Flight Path",
                 name="Flight Path"
             ))
         
         fig.update_layout(
             mapbox=dict(
-                style="open-street-map",
+                style="satellite",  # Better for showing mine terrain
                 center=dict(lat=lat, lon=lon),
-                zoom=15
+                zoom=16  # Closer zoom for mine detail
             ),
-            height=400,
+            height=500,
             margin=dict(l=0, r=0, t=0, b=0)
         )
         
