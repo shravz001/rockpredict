@@ -332,12 +332,6 @@ def show_landing_page():
     </style>
     """, unsafe_allow_html=True)
     
-    # Add a subtle floating access button
-    col1, col2, col3 = st.columns([6,1,1])
-    with col3:
-        if st.button("💎 Access Full System", key="access_system", help="View the complete monitoring dashboard"):
-            st.session_state.current_page = "Dashboard"
-            st.rerun()
     
     # Professional Navigation Bar
     st.markdown("""
@@ -374,6 +368,13 @@ def show_landing_page():
         </div>
     </div>
     """, unsafe_allow_html=True)
+    
+    # Access button below the hero section
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        if st.button("Click Here", key="access_system", help="Access the complete monitoring dashboard", use_container_width=True):
+            st.session_state.current_page = "Dashboard"
+            st.rerun()
     
     # Key Statistics Section
     try:

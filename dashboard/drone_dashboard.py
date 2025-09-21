@@ -314,7 +314,7 @@ class DroneDashboard:
         
         fig.update_layout(
             mapbox=dict(
-                style="satellite",  # Better for showing mine terrain
+                style="open-street-map",  # No token required
                 center=dict(lat=lat, lon=lon),
                 zoom=16  # Closer zoom for mine detail
             ),
