@@ -336,15 +336,6 @@ def show_landing_page():
             <div class="nav-brand">
                 <span class="nav-logo">⛰️ RockGuard Pro</span>
             </div>
-            <div class="nav-menu">
-                <a href="#" class="nav-link">Features</a>
-                <a href="#" class="nav-link">Technology</a>
-                <a href="#" class="nav-link" onclick="document.getElementById('dashboard-btn').click();">Dashboard</a>
-            </div>
-            <div class="nav-actions">
-                <button class="nav-btn secondary">Sign In</button>
-                <button class="nav-btn primary">Get Started</button>
-            </div>
         </div>
     </div>
     """, unsafe_allow_html=True)
