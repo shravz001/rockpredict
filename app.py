@@ -121,18 +121,25 @@ def show_real_time_dashboard():
             sensors = st.session_state.db_manager.get_sensors_for_site(current_mine['id'])
             env_data = st.session_state.db_manager.get_environmental_data(current_mine['id'])
             
-            # Create enhanced data structure
-            current_data = {
-                'mine_site': current_mine,
-                'sensors': sensors,
-                'environmental': env_data[-1] if env_data else {},
-                'risk_assessments': st.session_state.db_manager.get_recent_risk_assessments(current_mine['id'], 5)
-            }
+            # Check if we have actual sensor data, otherwise use synthetic
+            if sensors and len(sensors) > 0:
+                # Create enhanced data structure with real data
+                current_data = {
+                    'mine_site': current_mine,
+                    'sensors': sensors,
+                    'environmental': env_data[-1] if env_data else {},
+                    'risk_assessments': st.session_state.db_manager.get_recent_risk_assessments(current_mine['id'], 5)
+                }
+            else:
+                # No real sensors found, use synthetic data
+                st.info("📡 Using synthetic sensor data for demonstration (no real sensors configured)")
+                current_data = st.session_state.data_generator.generate_real_time_data()
         else:
-            # Fallback to synthetic data
+            # No mine sites, use synthetic data
+            st.info("📡 Using synthetic sensor data for demonstration (no mine sites configured)")
             current_data = st.session_state.data_generator.generate_real_time_data()
     except Exception as e:
-        st.warning(f"Using synthetic data due to database issue: {str(e)}")
+        st.warning(f"📡 Using synthetic data due to database issue: {str(e)}")
         current_data = st.session_state.data_generator.generate_real_time_data()
     
     # Use the professional dashboard
