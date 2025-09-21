@@ -13,6 +13,7 @@ import json
 
 from communication.drone_integration import DroneIntegration
 from communication.drone_system import DroneSystem
+import math
 
 class DroneDashboard:
     """Dashboard for drone monitoring and control"""
@@ -276,63 +277,229 @@ class DroneDashboard:
                 st.plotly_chart(fig, use_container_width=True)
     
     def _render_flight_map(self, drone_status: Dict[str, Any]):
-        """Render flight path map"""
-        st.subheader("Flight Path & Current Position")
+        """Render enhanced flight path map with accurate zones"""
+        st.subheader("Flight Path & Mine Zone Monitoring")
         
         # Get current position over mine terrain
         current_pos = drone_status.get("current_position", {})
         lat = current_pos.get("lat", 40.5232)  # Bingham Canyon Mine area
         lon = current_pos.get("lon", -112.1500)
+        altitude = current_pos.get("altitude", 150)
         
-        # Create map visualization
+        # Define mine zones with realistic boundaries
+        mine_zones = {
+            "North Pit": {
+                "coords": [[40.5270, -112.1520], [40.5270, -112.1480], [40.5250, -112.1480], [40.5250, -112.1520]],
+                "risk_level": "high",
+                "color": "rgba(255, 100, 100, 0.3)",
+                "border_color": "red",
+                "description": "Active mining area - High rockfall risk"
+            },
+            "South Pit": {
+                "coords": [[40.5230, -112.1520], [40.5230, -112.1480], [40.5210, -112.1480], [40.5210, -112.1520]],
+                "risk_level": "medium", 
+                "color": "rgba(255, 165, 0, 0.3)",
+                "border_color": "orange",
+                "description": "Secondary mining area - Medium risk"
+            },
+            "East Bench": {
+                "coords": [[40.5250, -112.1480], [40.5250, -112.1460], [40.5220, -112.1460], [40.5220, -112.1480]],
+                "risk_level": "low",
+                "color": "rgba(255, 255, 0, 0.3)",
+                "border_color": "yellow",
+                "description": "Stable area - Regular monitoring"
+            },
+            "West Slope": {
+                "coords": [[40.5250, -112.1540], [40.5250, -112.1520], [40.5220, -112.1520], [40.5220, -112.1540]],
+                "risk_level": "critical",
+                "color": "rgba(139, 0, 0, 0.4)",
+                "border_color": "darkred",
+                "description": "Unstable slope - Critical monitoring required"
+            },
+            "Central Monitoring": {
+                "coords": [[40.5240, -112.1510], [40.5240, -112.1490], [40.5220, -112.1490], [40.5220, -112.1510]],
+                "risk_level": "safe",
+                "color": "rgba(0, 255, 0, 0.3)",
+                "border_color": "green",
+                "description": "Safe zone - Equipment staging area"
+            }
+        }
+        
+        # Determine which zone the drone is currently in
+        current_zone = self._detect_drone_zone(lat, lon, mine_zones)
+        
+        # Create enhanced map visualization
         fig = go.Figure()
         
-        # Add current drone position
+        # Add mine zone boundaries
+        for zone_name, zone_data in mine_zones.items():
+            zone_coords = zone_data["coords"]
+            zone_lats = [coord[0] for coord in zone_coords] + [zone_coords[0][0]]  # Close the polygon
+            zone_lons = [coord[1] for coord in zone_coords] + [zone_coords[0][1]]
+            
+            # Add zone boundary
+            fig.add_trace(go.Scattermapbox(
+                lat=zone_lats,
+                lon=zone_lons,
+                mode="lines",
+                line=dict(width=3, color=zone_data["border_color"]),
+                fill="toself",
+                fillcolor=zone_data["color"],
+                name=f"{zone_name} ({zone_data['risk_level'].title()})",
+                text=zone_data["description"],
+                hovertemplate=f"<b>{zone_name}</b><br>Risk Level: {zone_data['risk_level'].title()}<br>{zone_data['description']}<extra></extra>"
+            ))
+        
+        # Add current drone position with enhanced styling
+        drone_icon_color = "lime" if current_zone and mine_zones[current_zone]["risk_level"] == "safe" else "red"
         fig.add_trace(go.Scattermapbox(
             lat=[lat],
             lon=[lon],
             mode="markers",
-            marker=dict(size=15, color="red"),
-            text="Current Drone Position",
-            name="Drone"
+            marker=dict(
+                size=20,
+                color=drone_icon_color,
+                symbol="circle",
+                allowoverlap=True
+            ),
+            text=f"🚁 Drone - {current_zone if current_zone else 'Unknown Zone'}",
+            name="Current Drone Position",
+            hovertemplate=f"<b>Drone Position</b><br>Zone: {current_zone or 'Unknown'}<br>Lat: {lat:.6f}<br>Lon: {lon:.6f}<br>Alt: {altitude}m<extra></extra>"
         ))
         
-        # Add flight path if available
+        # Add flight path with waypoint markers
         if hasattr(self.drone_system, 'flight_path') and self.drone_system.flight_path:
             path_lats = [point.get("lat", 0) for point in self.drone_system.flight_path]
             path_lons = [point.get("lon", 0) for point in self.drone_system.flight_path]
             
+            # Flight path line
             fig.add_trace(go.Scattermapbox(
                 lat=path_lats,
                 lon=path_lons,
-                mode="markers+lines",
-                marker=dict(size=8, color="#64748b"),
-                line=dict(width=2, color="#64748b"),
-                text="Flight Path",
-                name="Flight Path"
+                mode="lines",
+                line=dict(width=3, color="blue", dash="dash"),
+                name="Planned Flight Path",
+                hovertemplate="Planned Route<extra></extra>"
+            ))
+            
+            # Waypoint markers
+            fig.add_trace(go.Scattermapbox(
+                lat=path_lats,
+                lon=path_lons,
+                mode="markers",
+                marker=dict(size=10, color="blue", symbol="circle-open"),
+                name="Waypoints",
+                text=[f"Waypoint {i+1}" for i in range(len(path_lats))],
+                hovertemplate="<b>%{text}</b><br>Lat: %{lat:.6f}<br>Lon: %{lon:.6f}<extra></extra>"
             ))
         
+        # Enhanced map layout
         fig.update_layout(
             mapbox=dict(
-                style="open-street-map",  # No token required
+                style="satellite-streets",  # More detailed satellite view
                 center=dict(lat=lat, lon=lon),
-                zoom=16  # Closer zoom for mine detail
+                zoom=17  # Closer zoom for detailed zone view
             ),
-            height=500,
-            margin=dict(l=0, r=0, t=0, b=0)
+            height=600,
+            margin=dict(l=0, r=0, t=30, b=0),
+            title=dict(
+                text=f"Mine Zone Map - Drone Currently in: {current_zone or 'Unknown Zone'}",
+                x=0.5,
+                xanchor="center"
+            ),
+            showlegend=True,
+            legend=dict(
+                yanchor="top",
+                y=0.99,
+                xanchor="left", 
+                x=0.01,
+                bgcolor="rgba(255,255,255,0.8)",
+                bordercolor="rgba(0,0,0,0.2)",
+                borderwidth=1
+            )
         )
         
         st.plotly_chart(fig, use_container_width=True)
         
-        # Position details
-        col1, col2, col3 = st.columns(3)
+        # Enhanced position and zone information
+        col1, col2, col3, col4 = st.columns(4)
+        
         with col1:
-            st.metric("Latitude", f"{lat:.6f}")
+            st.metric("Current Zone", current_zone or "Unknown")
+            
         with col2:
-            st.metric("Longitude", f"{lon:.6f}")
+            if current_zone:
+                risk_level = mine_zones[current_zone]["risk_level"]
+                risk_colors = {"safe": "🟢", "low": "🟡", "medium": "🟠", "high": "🔴", "critical": "🚨"}
+                st.metric("Zone Risk", f"{risk_colors.get(risk_level, '⚪')} {risk_level.title()}")
+            else:
+                st.metric("Zone Risk", "Unknown")
+                
         with col3:
-            altitude = current_pos.get("altitude", 0)
-            st.metric("Altitude", f"{altitude} m")
+            st.metric("Coordinates", f"{lat:.4f}, {lon:.4f}")
+            
+        with col4:
+            st.metric("Altitude AGL", f"{altitude} m")
+        
+        # Zone details and recommendations
+        if current_zone:
+            zone_info = mine_zones[current_zone]
+            risk_level = zone_info["risk_level"]
+            
+            if risk_level in ["critical", "high"]:
+                st.error(f"⚠️ **HIGH RISK ZONE**: {zone_info['description']}")
+                st.write("**Recommendations:** Maintain higher altitude, increase monitoring frequency, be ready for immediate evacuation.")
+            elif risk_level == "medium":
+                st.warning(f"🟡 **MEDIUM RISK ZONE**: {zone_info['description']}")
+                st.write("**Recommendations:** Standard monitoring protocols, maintain safe distance from unstable areas.")
+            elif risk_level == "low":
+                st.info(f"🟡 **LOW RISK ZONE**: {zone_info['description']}")
+                st.write("**Recommendations:** Normal operations, routine monitoring sufficient.")
+            else:
+                st.success(f"✅ **SAFE ZONE**: {zone_info['description']}")
+                st.write("**Recommendations:** Safe for extended operations and close inspection.")
+        else:
+            st.warning("⚠️ Drone position outside defined monitoring zones. Proceed with caution.")
+        
+        # Zone statistics
+        with st.expander("📊 Zone Coverage Statistics"):
+            total_zones = len(mine_zones)
+            risk_distribution = {}
+            for zone in mine_zones.values():
+                risk = zone["risk_level"]
+                risk_distribution[risk] = risk_distribution.get(risk, 0) + 1
+                
+            st.write(f"**Total Monitoring Zones:** {total_zones}")
+            for risk, count in risk_distribution.items():
+                percentage = (count / total_zones) * 100
+                st.write(f"**{risk.title()} Risk Zones:** {count} ({percentage:.1f}%)")
+    
+    def _detect_drone_zone(self, lat: float, lon: float, mine_zones: dict) -> str:
+        """Detect which zone the drone is currently in using point-in-polygon algorithm"""
+        for zone_name, zone_data in mine_zones.items():
+            if self._point_in_polygon(lat, lon, zone_data["coords"]):
+                return zone_name
+        return None
+    
+    def _point_in_polygon(self, lat: float, lon: float, polygon_coords: list) -> bool:
+        """Check if a point is inside a polygon using ray casting algorithm"""
+        x, y = lat, lon
+        n = len(polygon_coords)
+        inside = False
+        
+        p1x, p1y = polygon_coords[0]
+        for i in range(1, n + 1):
+            p2x, p2y = polygon_coords[i % n]
+            if y > min(p1y, p2y):
+                if y <= max(p1y, p2y):
+                    if x <= max(p1x, p2x):
+                        if p1y != p2y:
+                            xinters = (y - p1y) * (p2x - p1x) / (p2y - p1y) + p1x
+                        if p1x == p2x or x <= xinters:
+                            inside = not inside
+            p1x, p1y = p2x, p2y
+        
+        return inside
     
     def _render_drone_alerts(self):
         """Render drone-specific alerts"""
