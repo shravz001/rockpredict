@@ -102,7 +102,7 @@ def create_sidebar_navigation():
         # Professional Company Branding
         st.markdown("""
         <div class="company-branding">
-            <div class="company-logo">⛏️ MineGuard AI</div>
+            <div class="company-logo">⛏️ Rockfall Prediction System</div>
             <div class="company-tagline">Advanced Mine Safety Solutions</div>
         </div>
         """, unsafe_allow_html=True)
@@ -175,8 +175,6 @@ def render_page_content(page):
                 <h1 style="margin: 0; font-size: 1.8rem; font-weight: 600;">{get_page_title(page)}</h1>
             </div>
             <div style="text-align: right;">
-                <div style="font-size: 0.9rem; opacity: 0.8;">MineGuard AI Platform</div>
-                <div style="font-size: 0.8rem; opacity: 0.7;">Version 2.1.0 Enterprise</div>
             </div>
         </div>
     </div>
