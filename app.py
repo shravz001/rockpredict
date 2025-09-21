@@ -173,7 +173,6 @@ def render_page_content(page):
         <div style="display: flex; justify-content: space-between; align-items: center;">
             <div>
                 <h1 style="margin: 0; font-size: 1.8rem; font-weight: 600;">{get_page_title(page)}</h1>
-                <p style="margin: 0.5rem 0 0 0; opacity: 0.9; font-size: 1rem;">{get_page_description(page)}</p>
             </div>
             <div style="text-align: right;">
                 <div style="font-size: 0.9rem; opacity: 0.8;">MineGuard AI Platform</div>
