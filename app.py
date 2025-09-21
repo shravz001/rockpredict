@@ -417,12 +417,18 @@ def show_landing_page():
     # Position the button over the hero section with CSS
     st.markdown("""
     <style>
-    /* Position the last Streamlit button over the hero section */
-    [data-testid="stAppViewContainer"] > div > div:last-child [data-testid="baseButton-primary"] {
-        position: absolute !important;
-        top: 60vh !important;
+    /* Make sure hero section is positioned relative */
+    .hero-section {
+        position: relative !important;
+        height: 100vh !important;
+    }
+    
+    /* Target the button directly and position it over the hero - multiple selectors for safety */
+    [data-testid="stBaseButton-secondary"] {
+        position: fixed !important;
+        top: 45% !important;
         left: 50% !important;
-        transform: translateX(-50%) !important;
+        transform: translate(-50%, -50%) !important;
         z-index: 1000 !important;
         background: #1e293b !important;
         color: white !important;
@@ -433,11 +439,39 @@ def show_landing_page():
         border: none !important;
         transition: all 0.3s ease !important;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        min-width: 150px !important;
+        width: auto !important;
     }
     
-    [data-testid="stAppViewContainer"] > div > div:last-child [data-testid="baseButton-primary"]:hover {
+    [data-testid="stBaseButton-secondary"]:hover {
         background: #0f172a !important;
-        transform: translateX(-50%) translateY(-3px) !important;
+        transform: translate(-50%, -50%) translateY(-3px) !important;
+        box-shadow: 0 8px 20px rgba(30, 41, 59, 0.4) !important;
+    }
+    
+    /* Also target by button element directly */
+    button[data-testid="stBaseButton-secondary"] {
+        position: fixed !important;
+        top: 45% !important;
+        left: 50% !important;
+        transform: translate(-50%, -50%) !important;
+        z-index: 1000 !important;
+        background: #1e293b !important;
+        color: white !important;
+        padding: 1rem 2.5rem !important;
+        font-size: 1.1rem !important;
+        font-weight: 600 !important;
+        border-radius: 8px !important;
+        border: none !important;
+        transition: all 0.3s ease !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+        min-width: 150px !important;
+        width: auto !important;
+    }
+    
+    button[data-testid="stBaseButton-secondary"]:hover {
+        background: #0f172a !important;
+        transform: translate(-50%, -50%) translateY(-3px) !important;
         box-shadow: 0 8px 20px rgba(30, 41, 59, 0.4) !important;
     }
     
@@ -445,10 +479,6 @@ def show_landing_page():
         margin-top: 2rem;
         display: flex;
         justify-content: center;
-    }
-    
-    .hero-section {
-        position: relative;
     }
     </style>
     """, unsafe_allow_html=True)
