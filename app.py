@@ -369,13 +369,6 @@ def show_landing_page():
     </div>
     """, unsafe_allow_html=True)
     
-    # Access button below the hero section
-    col1, col2, col3 = st.columns([2, 1, 2])
-    with col2:
-        if st.button("Click Here", key="access_system", help="Access the complete monitoring dashboard", use_container_width=True):
-            st.session_state.current_page = "Dashboard"
-            st.rerun()
-    
     # Key Statistics Section
     try:
         # Get real system data
@@ -432,6 +425,13 @@ def show_landing_page():
         </div>
         """, unsafe_allow_html=True)
     
+    # Access button below the statistics section
+    st.markdown("<br>", unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([2, 1, 2])
+    with col2:
+        if st.button("Click Here", key="access_system", help="Access the complete monitoring dashboard", use_container_width=True):
+            st.session_state.current_page = "Dashboard"
+            st.rerun()
 
 def show_real_time_dashboard():
     st.header("📊 Real-Time Monitoring Dashboard")
