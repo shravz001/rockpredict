@@ -396,7 +396,7 @@ class DroneDashboard:
         # Enhanced map layout
         fig.update_layout(
             mapbox=dict(
-                style="satellite-streets",  # More detailed satellite view
+                style="open-street-map",  # Free map style that doesn't require access token
                 center=dict(lat=lat, lon=lon),
                 zoom=17  # Closer zoom for detailed zone view
             ),
