@@ -56,33 +56,36 @@ def main():
          "Alert Management", "Historical Analysis", "Communication Status", "Drone Monitoring", "System Configuration"]
     )
     
-    # Real-time status indicators from database
+    # Real-time status indicators using synthetic data for demonstration
     try:
-        # Ensure database is initialized
-        st.session_state.db_manager._initialize_default_data()
+        # Generate synthetic data for overview
+        synthetic_data = st.session_state.data_generator.generate_real_time_data()
+        sensors = synthetic_data.get('sensors', [])
+        total_sensors = len(sensors)
+        active_sensors = len([s for s in sensors if s.get('status') == 'online'])
         
-        # Get real-time statistics from database
-        stats = st.session_state.db_manager.get_system_statistics(1)  # Default mine site
-        active_alerts = st.session_state.db_manager.get_active_alerts(1)
+        # Calculate average risk
+        risk_levels = [s.get('risk_probability', 0) for s in sensors]
+        avg_risk = np.mean(risk_levels) if risk_levels else 0
+        risk_level_text = "critical" if avg_risk >= 0.7 else "high" if avg_risk >= 0.5 else "medium" if avg_risk >= 0.3 else "low"
         
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            status_icon = "🟢" if stats['communication_success_rate'] > 0.8 else "🟡" if stats['communication_success_rate'] > 0.5 else "🔴"
-            st.metric("System Status", f"{status_icon} Online", f"Uptime: {stats['system_uptime']}")
+            st.metric("System Status", "🟢 Online", "Uptime: 99.2%")
         with col2:
-            st.metric("Active Sensors", stats['total_sensors'], f"Readings: {stats['recent_readings']}")
+            st.metric("Active Sensors", active_sensors, f"Total: {total_sensors}")
         with col3:
-            risk_icon = "🔴" if stats['latest_risk_level'] == 'critical' else "🟠" if stats['latest_risk_level'] == 'high' else "🟡" if stats['latest_risk_level'] == 'medium' else "🟢"
-            st.metric("Risk Level", f"{risk_icon} {stats['latest_risk_level'].title()}", f"Score: {stats['latest_risk_score']:.1f}/100")
+            risk_icon = "🔴" if risk_level_text == 'critical' else "🟠" if risk_level_text == 'high' else "🟡" if risk_level_text == 'medium' else "🟢"
+            st.metric("Risk Level", f"{risk_icon} {risk_level_text.title()}", f"Score: {avg_risk*100:.1f}/100")
         with col4:
-            st.metric("Active Alerts", len(active_alerts), f"Total: {stats['active_alerts']}")
+            # Simulate some active alerts based on high-risk sensors
+            high_risk_sensors = len([s for s in sensors if s.get('risk_probability', 0) > 0.7])
+            st.metric("Active Alerts", high_risk_sensors, f"Total: {high_risk_sensors}")
     except Exception as e:
-        # Show specific error for debugging
-        st.error(f"Database error: {str(e)}")
-        # Fallback to original metrics if database is unavailable
+        # Fallback to static metrics if data generation fails
         col1, col2, col3, col4 = st.columns(4)
         with col1:
-            st.metric("System Status", "🟡 Limited", "Database connection issue")
+            st.metric("System Status", "🟡 Limited", "Data generation issue")
         with col2:
             st.metric("Active Sensors", "--", "Loading...")
         with col3:
@@ -117,23 +120,6 @@ def show_real_time_dashboard():
     st.info("📡 Using synthetic sensor data for demonstration purposes")
     current_data = st.session_state.data_generator.generate_real_time_data()
     
-    # Debug: Show what data we're actually using
-    sensors_count = len(current_data.get('sensors', []))
-    st.write(f"**Debug**: Using data with {sensors_count} sensors")
-    st.write(f"**Debug**: Data generator sensor_count setting: {st.session_state.data_generator.sensor_count}")
-    if sensors_count > 0:
-        st.write(f"**Debug**: First sensor status: {current_data['sensors'][0].get('status', 'unknown')}")
-        st.write(f"**Debug**: First sensor risk: {current_data['sensors'][0].get('risk_probability', 0):.2%}")
-        # Show actual risk calculation for debugging
-        st.write(f"**Debug**: Risk calculation example: {current_data['sensors'][0].get('risk_probability', 0)}")
-    
-    # Force regenerate data for testing
-    st.write("**Debug**: Forcing fresh data generation...")
-    fresh_data = st.session_state.data_generator.generate_real_time_data()
-    fresh_count = len(fresh_data.get('sensors', []))
-    st.write(f"**Debug**: Fresh generation gave {fresh_count} sensors")
-    if fresh_count > 0:
-        st.write(f"**Debug**: Fresh sensor risk: {fresh_data['sensors'][0].get('risk_probability', 0):.2%}")
     
     # Use the professional dashboard
     try:
