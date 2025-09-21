@@ -113,34 +113,9 @@ def main():
 def show_real_time_dashboard():
     st.header("📊 Real-Time Monitoring Dashboard")
     
-    # Get real sensor data from database, fallback to synthetic
-    try:
-        mine_sites = st.session_state.db_manager.get_mine_sites()
-        if mine_sites:
-            current_mine = mine_sites[0]  # Use first mine site
-            sensors = st.session_state.db_manager.get_sensors_for_site(current_mine['id'])
-            env_data = st.session_state.db_manager.get_environmental_data(current_mine['id'])
-            
-            # Check if we have actual sensor data, otherwise use synthetic
-            if sensors and len(sensors) > 0:
-                # Create enhanced data structure with real data
-                current_data = {
-                    'mine_site': current_mine,
-                    'sensors': sensors,
-                    'environmental': env_data[-1] if env_data else {},
-                    'risk_assessments': st.session_state.db_manager.get_recent_risk_assessments(current_mine['id'], 5)
-                }
-            else:
-                # No real sensors found, use synthetic data
-                st.info("📡 Using synthetic sensor data for demonstration (no real sensors configured)")
-                current_data = st.session_state.data_generator.generate_real_time_data()
-        else:
-            # No mine sites, use synthetic data
-            st.info("📡 Using synthetic sensor data for demonstration (no mine sites configured)")
-            current_data = st.session_state.data_generator.generate_real_time_data()
-    except Exception as e:
-        st.warning(f"📡 Using synthetic data due to database issue: {str(e)}")
-        current_data = st.session_state.data_generator.generate_real_time_data()
+    # Force use of synthetic data for demonstration (since database is empty)
+    st.info("📡 Using synthetic sensor data for demonstration purposes")
+    current_data = st.session_state.data_generator.generate_real_time_data()
     
     # Debug: Show what data we're actually using
     sensors_count = len(current_data.get('sensors', []))

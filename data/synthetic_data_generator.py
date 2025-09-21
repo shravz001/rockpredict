@@ -9,6 +9,7 @@ class SyntheticDataGenerator:
         self.sensor_count = 47
         self.zone_count = 12
         self.base_coordinates = {'lat': 45.123, 'lon': -123.456}
+        print(f"SyntheticDataGenerator initialized with {self.sensor_count} sensors")
         
     def generate_real_time_data(self):
         """Generate current sensor readings and environmental data"""
