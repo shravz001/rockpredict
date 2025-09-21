@@ -89,8 +89,9 @@ def main():
     if 'current_page' not in st.session_state:
         st.session_state.current_page = "Home"
     
-    # Modern dashboard layout
-    create_sidebar_navigation()
+    # Only show sidebar for non-Home pages
+    if st.session_state.current_page != "Home":
+        create_sidebar_navigation()
     
     # Render the selected page content
     render_page_content(st.session_state.current_page)
@@ -324,8 +325,10 @@ def show_landing_page():
     # Hide sidebar for landing page
     st.markdown("""
     <style>
-    [data-testid="stSidebar"] {width: 0px !important; min-width: 0px !important;}
-    .main .block-container {margin-left: 0px !important;}
+    [data-testid="stSidebar"] {display: none !important;}
+    .css-1d391kg {display: none !important;}
+    section[data-testid="stSidebar"] {display: none !important;}
+    .main .block-container {margin-left: 0px !important; padding-left: 0px !important;}
     </style>
     """, unsafe_allow_html=True)
     
@@ -341,8 +344,18 @@ def show_landing_page():
     """, unsafe_allow_html=True)
     
     # Hero Section with Background Image
+    import base64
+    
+    # Read and encode the background image (use stock image without buttons)
+    try:
+        with open('attached_assets/stock_images/dramatic_rocky_cliff_a3d1ebb9.jpg', 'rb') as f:
+            img_data = base64.b64encode(f.read()).decode()
+            bg_image_data_url = f"data:image/jpeg;base64,{img_data}"
+    except:
+        bg_image_data_url = ""  # Fallback to no background
+    
     st.markdown(f"""
-    <div class="hero-section" style="background-image: url('attached_assets/image_1758441236901.png');">
+    <div class="hero-section" style="background-image: url('{bg_image_data_url}');">
         <div class="hero-overlay">
             <div class="hero-content">
                 <h1 class="hero-title">Advanced Rockfall Prediction System</h1>
@@ -350,10 +363,6 @@ def show_landing_page():
                     Protect lives and infrastructure with AI-powered geological monitoring, 
                     real-time risk assessment, and early warning systems.
                 </p>
-                <div class="hero-buttons">
-                    <button class="hero-btn primary" onclick="document.getElementById('dashboard-btn').click();">Start Monitoring</button>
-                    <button class="hero-btn secondary">Learn More</button>
-                </div>
             </div>
         </div>
     </div>
@@ -415,19 +424,6 @@ def show_landing_page():
         </div>
         """, unsafe_allow_html=True)
     
-    # Hidden button to connect to dashboard
-    if st.button("Go to Dashboard", key="dashboard-btn", type="primary"):
-        st.session_state.current_page = "Dashboard"
-        st.rerun()
-    
-    # Hide the button
-    st.markdown("""
-    <style>
-    button[kind="primary"]:contains("Go to Dashboard") {
-        display: none;
-    }
-    </style>
-    """, unsafe_allow_html=True)
 
 def show_real_time_dashboard():
     st.header("📊 Real-Time Monitoring Dashboard")
