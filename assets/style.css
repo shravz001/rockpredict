@@ -140,9 +140,9 @@ header {visibility: hidden;}
 }
 
 .stButton > button[kind="primary"] {
-    background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+    background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
     color: white;
-    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+    box-shadow: 0 2px 4px rgba(51, 65, 85, 0.3);
 }
 
 .stButton > button[kind="secondary"] {
@@ -153,7 +153,7 @@ header {visibility: hidden;}
 
 .stButton > button[kind="secondary"]:hover {
     background: #f1f5f9;
-    border-color: #1e40af;
+    border-color: #1e293b;
     transform: translateY(-1px);
     box-shadow: 0 2px 8px rgba(0,0,0,0.1);
 }
