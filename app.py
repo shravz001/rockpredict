@@ -145,9 +145,20 @@ def show_real_time_dashboard():
     # Debug: Show what data we're actually using
     sensors_count = len(current_data.get('sensors', []))
     st.write(f"**Debug**: Using data with {sensors_count} sensors")
+    st.write(f"**Debug**: Data generator sensor_count setting: {st.session_state.data_generator.sensor_count}")
     if sensors_count > 0:
         st.write(f"**Debug**: First sensor status: {current_data['sensors'][0].get('status', 'unknown')}")
         st.write(f"**Debug**: First sensor risk: {current_data['sensors'][0].get('risk_probability', 0):.2%}")
+        # Show actual risk calculation for debugging
+        st.write(f"**Debug**: Risk calculation example: {current_data['sensors'][0].get('risk_probability', 0)}")
+    
+    # Force regenerate data for testing
+    st.write("**Debug**: Forcing fresh data generation...")
+    fresh_data = st.session_state.data_generator.generate_real_time_data()
+    fresh_count = len(fresh_data.get('sensors', []))
+    st.write(f"**Debug**: Fresh generation gave {fresh_count} sensors")
+    if fresh_count > 0:
+        st.write(f"**Debug**: Fresh sensor risk: {fresh_data['sensors'][0].get('risk_probability', 0):.2%}")
     
     # Use the professional dashboard
     try:
